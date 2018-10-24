@@ -3,7 +3,7 @@
 
 File also contains a ModelParams class, which is a convenience wrapper for all the parameters to the model.
 Details of the model can be found below.
-Based on Ben Eisner, Tim Rocktaschel's work. 
+Based on Ben Eisner, Tim Rocktaschel's good work. We will work on a quite different approach later but some of the parser codes are written based on their codes. 
 """
 
 # External dependencies
@@ -27,12 +27,11 @@ __email__ = "jili5@microsoft.com"
 class ModelParams:
     """Convenience class for passing around model parameters"""
 
-    def __init__(self, in_dim, out_dim, max_epochs, batch_size, learning_rate, dropout, class_threshold, nn_params):
+    def __init__(self, in_dim, max_epochs, batch_size, learning_rate, dropout, class_threshold, nn_params):
         """Create a struct of all parameters that get fed into the model
 
         Args:
             in_dim: Dimension of the word vectors supplied to the algorithm (e.g. word2vec)
-            out_dim: Dimension of the output emoji vectors of the algorithm
             max_epochs: Max number of training epochs
             learning_rate: Learning rate
             dropout: Dropout rate
@@ -43,10 +42,10 @@ class ModelParams:
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.max_epochs = max_epochs
-        self.out_dim = out_dim
         self.in_dim = in_dim
         self.nn_params = nn_params
 
+    # TODO jili5: update this later
     def model_folder(self, dataset_name):
         """Get the model path for a given dataset
 

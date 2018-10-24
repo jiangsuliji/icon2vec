@@ -35,30 +35,10 @@ class Text2Vec:
             model_params: Parameters for the model
             num_icons: Number of icons we will ultimately train
         """
-
+        self.initializeDataset(trainset, devset, testset)
+        
         self.model_params = model_params
         self.num_cols = num_icons
-        
-        icon_idx, phrase_embedding, labels = [], [], []
-        for item in trainset:
-            icon_idx.append(item[0])
-            phrase_embedding.append(item[1])
-            labels.append(item[2])
-        self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
-        
-        icon_idx, phrase_embedding, labels = [], [], []
-        for item in devset:
-            icon_idx.append(item[0])
-            phrase_embedding.append(item[1])
-            labels.append(item[2])
-        self.devset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
-        
-        icon_idx, phrase_embedding, labels = [], [], []
-        for item in testset:
-            icon_idx.append(item[0])
-            phrase_embedding.append(item[1])
-            labels.append(item[2])
-        self.testset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         
         # row - phrase input to the graph
         self.phrase_vec = tf.placeholder(tf.float32, shape=[None, model_params.in_dim], name='phrase_vec')
@@ -110,17 +90,43 @@ class Text2Vec:
         # Calculate the cross-entropy loss
         self.loss = tf.nn.weighted_cross_entropy_with_logits(targets=self.score, logits=self.y, pos_weight=1)
         
+        
+    def initializeDataset(self, trainset, devset, testset):
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in trainset:
+            icon_idx.append(item[0])
+            phrase_embedding.append(item[1])
+            labels.append(item[2])
+        self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in devset:
+            icon_idx.append(item[0])
+            phrase_embedding.append(item[1])
+            labels.append(item[2])
+        self.devset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in testset:
+            icon_idx.append(item[0])
+            phrase_embedding.append(item[1])
+            labels.append(item[2])
+        self.testset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        
+    def initializeSession(self):
+        self.session = tf.Session()
+        init = tf.global_variables_initializer()
+        self.session.run(init)
+    
     
     # train the model using the appropriate parameters
     def train(self):
         """Train the model on a given knowledge base"""
         self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
-
         minimization_op = self.optimizer.minimize(self.loss)
-        session = tf.Session()
-
-        init = tf.global_variables_initializer()
-        session.run(init)
+        
+        self.initializeSession()
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
@@ -139,7 +145,7 @@ class Text2Vec:
 #             print("===",training_idx)
 #             print(y)
             
-            _, current_loss = session.run([minimization_op, self.loss], feed_dict={
+            _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
                 self.col:self.trainset[0][training_idx],
                 self.phrase_vec: self.trainset[1][training_idx],
                 self.y:np.array(y)
@@ -147,8 +153,8 @@ class Text2Vec:
             current_loss = sum(current_loss)
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
-            devres = self.cal_top_n(session, self.devset, "dev", N=2)
-            testres = self.cal_top_n(session, self.testset, "test", N=2)
+            devres = self.cal_top_n(self.devset, "dev", N=2)
+            testres = self.cal_top_n(self.testset, "test", N=2)
             
             if devres and testres and devres[0] > max_accuracy[0][0]:
                 max_accuracy = [devres, testres]
@@ -156,17 +162,16 @@ class Text2Vec:
             
         print("results when max dev accu:")
         print(max_accuracy)
-        session.close()
         
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
-    def cal_top_n(self, session, dataset, str, N=2):
+    def cal_top_n(self, dataset, str, N=2):
         results = [] # for phrase - top N icons
         indices_arr = range(0, self.num_cols)
         for ph_idx in range(len(dataset[1])):
 #             print(dataset[1][ph_idx])
 #             print(np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1)).shape)
-            res = session.run(self.prob, feed_dict={
+            res = self.session.run(self.prob, feed_dict={
                     self.col:indices_arr,
                     self.phrase_vec: np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1))
             })
@@ -181,7 +186,6 @@ class Text2Vec:
 #             print(dataset[0][ph_idx] in sorted(res, reverse=True)[:4])
             results.append(rtn_1)
         return self.cal_metrics(results, dataset[2], dataset[0], str)
-        
         
         
     # calculate details
@@ -210,9 +214,10 @@ class Text2Vec:
               %(str,accuracy1, accuracy2, T1, F1, T2, F2))
         return [accuracy1, accuracy2, T1, F1, T2, F2]
     
+    
     # train set evaluation
-    def test_on_train(self, session):
-        res = session.run(self.prob, feed_dict={
+    def test_on_train(self):
+        res = self.session.run(self.prob, feed_dict={
                 self.col:self.trainset[0],
                 self.phrase_vec: self.trainset[1]
         })
