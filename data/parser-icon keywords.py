@@ -8,11 +8,11 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-    "useNewIconCVS": True,
+    "useNewIconCVS": False,
     "useBiGram": False, 
     "devsize": 100, 
     "testsize":100,
-    "averageWeight": True
+    "averageWeight": False 
 }
 
 
@@ -106,6 +106,8 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if icons == []:
                 continue
             icon = icons[0]
+            if data[icon] == []:
+                continue
             keyword = data[icon][0]
             testset.append((icon, keyword, find_weight(keyword)))
             data[icon] = data[icon][1:]
