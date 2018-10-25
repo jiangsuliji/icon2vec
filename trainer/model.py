@@ -179,11 +179,11 @@ class Text2Vec:
             })
 
             results.append(sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N])
-        return self.cal_metrics(results, dataset[2], dataset[0], str)
+        return self.cal_metrics(results, dataset[2], dataset[0], str, N=N)
         
         
     # calculate details
-    def cal_metrics(self, results, labels, icons, str):
+    def cal_metrics(self, results, labels, icons, str, N=2):
         # results: top N icon indices returned by Text2Vec for each phrase
         # label for each phrase-icon pair
         # icon idx for each phrase-icon pair
@@ -193,22 +193,18 @@ class Text2Vec:
         if len(results) != len(labels) or len(results) != len(icons):
             print("error: len of inputs not equal")
             raise
-        T1, F1, T2, F2 = 0, 0, 0, 0
+        P, T, F = [-404]*N, [0]*N, [0]*N
         for i in range(len(results)):
-            if icons[i] in results[i]:
-                T2 += 1
-            else:
-                F2 += 1
-            if icons[i] == results[i][0]:
-                T1 += 1
-            else:
-                F1 += 1
-        accuracy1, accuracy2 = T1/(T1+F1), T2/(T2+F2)
-        print("  %s\tP1=%3.2f, P2=%3.2f; T1=%d,F1=%d,T2=%d,F2=%d" 
-              %(str,accuracy1, accuracy2, T1, F1, T2, F2))
-        return [accuracy1, accuracy2, T1, F1, T2, F2]
-
-    
+            for n in range(N):
+                if icons[i] in results[i][:n+1]:
+                    T[n] += 1
+                else:
+                    F[n] += 1
+        for n in range(N):
+            P[n] = T[n]/(T[n]+F[n])
+            
+        self.print_top_accuracy_TP(P, T, F, str)
+        return P, T, F
     
     # train set evaluation
     def test_on_train(self):
@@ -219,4 +215,18 @@ class Text2Vec:
         y_pred = [1 if y > self.model_params.class_threshold else 0 for y in res]
         return y_pred, self.trainset[2]
        
+    
+    def print_top_accuracy_TP(self, P, T, F, st):
+        if len(P) != len(T) or len(T) != len(F):
+            raise
+        s = "\t"+st + "\t"
+        for i in range(len(P)):
+            s += "P" +str(i+1)+"="
+            s += "%3.2f," %(P[i])
+        s = s[:-1] + "; "
+        for i in range(len(T)):
+            s += "T"+str(i+1)+"="+str(T[i]) + ",F" + str(i+1)+"="+str(F[i])+","
+        s = s[:-1]
+        print(s)
+            
         
