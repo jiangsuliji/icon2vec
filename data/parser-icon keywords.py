@@ -33,7 +33,7 @@ def generate_icon_idx_bi_map():
     fileObject = open("iconIndex2NameMap.p", 'wb')
     pk.dump(mp_idx_icon, fileObject)
     fileObject.close()
-    # print(mp_idx_icon)
+#     print(mp_idx_icon)
     print("dumped idx map for",len(mp_icon_idx),"icons to iconName2IndexMap.p. Together with idx to name map" )
 
 
@@ -58,7 +58,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
     else:
         csv_name = "IconDescriptionClean_oldIcons.csv"
     total_paircnt = 0
-    with open(csv_name, "r", encoding="utf-8-sig") as f:
+    with open(csv_name, "r") as f:
         lines = f.readlines()
         for idx, line in enumerate(lines):
             mediaid, collection, name = line.rstrip().split(",")[:3]

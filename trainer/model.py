@@ -3,7 +3,7 @@
 
 File also contains a ModelParams class, which is a convenience wrapper for all the parameters to the model.
 Details of the model can be found below.
-Based on Ben Eisner, Tim Rocktaschel's work. 
+Based on Ben Eisner, Tim Rocktaschel's good work. 
 """
 
 # External dependencies
@@ -92,12 +92,17 @@ class Text2Vec:
         
         
     def initializeDataset(self, trainset, devset, testset):
+        f = open("data/training/train.txt", "r")
+        ph_lines = f.readlines()
+        
         icon_idx, phrase_embedding, labels = [], [], []
+        ph_idx = []
         for item in trainset:
             icon_idx.append(item[0])
             phrase_embedding.append(item[1])
             labels.append(item[2])
-        self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+            ph_idx.append(ph_lines[item[4]])
+        self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(ph_idx)]
         
         icon_idx, phrase_embedding, labels = [], [], []
         for item in devset:
@@ -125,25 +130,31 @@ class Text2Vec:
         """Train the model on a given knowledge base"""
         self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
         minimization_op = self.optimizer.minimize(self.loss)
+        fileObject = open("data/iconIndex2NameMap.p", 'rb')
+        mp = pk.load(fileObject)
         
         self.initializeSession()
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
-        max_accuracy = [[0],[0],[0]]
+#         max_accuracy = [[0],[0],[0]]
         while epoch < self.model_params.max_epochs:   
-#             print(total_data_entry, half_data_entry)
+#             print(len(self.trainset[0]), self.trainset[0].shape, total_data_entry, half_data_entry)
             training_idx_pos = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
             training_idx_neg = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
             training_idx_neg = [i+ half_data_entry for i in training_idx_neg]
             training_idx = np.concatenate((training_idx_pos, training_idx_neg),axis =0)
             shuffle(training_idx)
-            y = [0 if i < half_data_entry else 1 for i in training_idx]
+            y = [1 if i < half_data_entry else 0 for i in training_idx]
 #             y = [self.trainset[2][i] for i in training_idx]
             
 #             print(training_idx_neg, training_idx_pos)
 #             print("===",training_idx)
 #             print(y)
+        
+            print(training_idx[0], y[0])
+            iconidx = self.trainset[0][training_idx[0]]
+            print(iconidx, mp[iconidx], self.trainset[3][training_idx[0]])
             
             _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
                 self.col:self.trainset[0][training_idx],
@@ -154,14 +165,14 @@ class Text2Vec:
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             devres = self.cal_top_n(self.devset, "dev", N=2)
-            testres = self.cal_top_n(self.testset, "test", N=2)
+#             testres = self.cal_top_n(self.testset, "test", N=2)
             
-            if devres and testres and devres[0] > max_accuracy[0][0]:
-                max_accuracy = [devres, testres]
+#             if devres and testres and devres[0] > max_accuracy[0][0]:
+#                 max_accuracy = [devres, testres]
             epoch += 1
             
-        print("results when max dev accu:")
-        print(max_accuracy)
+#         print("results when max dev accu:")
+#         print(max_accuracy)
         
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
@@ -176,15 +187,16 @@ class Text2Vec:
                     self.phrase_vec: np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1))
             })
 #             print(res)
-            rtn_0 = sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N]
-            rtn_1 = []
-            if res[rtn_0[0]] >= self.model_params.class_threshold:
-                rtn_1.append(rtn_0[0])
-            if res[rtn_0[1]] >= self.model_params.class_threshold:
-                rtn_1.append(rtn_0[1])
+#             print(len(res))
+#             rtn_0 = sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N]
+#             rtn_1 = []
+#             if res[rtn_0[0]] >= self.model_params.class_threshold:
+#                 rtn_1.append(rtn_0[0])
+#             if res[rtn_0[1]] >= self.model_params.class_threshold:
+#                 rtn_1.append(rtn_0[1])
 #             print(res[rtn_1[0]], res[rtn_1[1]], sorted(res, reverse=True)[:N])
 #             print(dataset[0][ph_idx] in sorted(res, reverse=True)[:4])
-            results.append(rtn_1)
+            results.append(sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N])
         return self.cal_metrics(results, dataset[2], dataset[0], str)
         
         
@@ -213,6 +225,35 @@ class Text2Vec:
         print("  %s\taccuracy1=%3.2f, accuracy2=%3.2f; T1=%d,F1=%d,T2=%d,F2=%d" 
               %(str,accuracy1, accuracy2, T1, F1, T2, F2))
         return [accuracy1, accuracy2, T1, F1, T2, F2]
+#         TP,FP,TN,FN=0,0,0,0
+#         for i in range(len(results)):
+#             if labels[i] == 1:
+#                 if icons[i] in results[i]:
+#                     TP += 1
+#                 else:
+#                     FN += 1
+#             else:
+#                 if icons[i] not in results[i]:
+#                     TN += 1
+#                 else:
+#                     FP += 1
+#         accuracy, precision, recall, errorrate, F1 = -404, -404, -404, -404, -404 
+#         try:
+#             accuracy = (TN+TP)/(TN+TP+FN+FP)
+#             recall = TP/(TP+FN)
+#             precision = TP/(TP+FP)
+#             errorrate = (FN+FP)/TP  
+#             F1 = 2*precision*recall/(precision+recall)
+#             print("  %s\taccuracy=%3.2f,P=%3.2f,R=%3.2f,Err=%3.2f,F1=%3.2f;\tTP=%d,FP=%d,TN=%d,FN=%d;T=%3.2f" 
+#               %(str, accuracy,precision,recall,errorrate,F1,TP,FP,TN,FN,self.model_params.class_threshold))
+#         except:
+#             pass
+#             return [accuracy, precision,recall, errorrate, F1, TP, FP, TN, FN]
+#         print("  %s\tTP=%d,FPFN=%d" 
+#               %(str, TP,FN))
+#             return [accuracy, precision,recall, errorrate, F1, TP, FP, TN, FN]
+#         except:
+#             return None
     
     
     # train set evaluation
