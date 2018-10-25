@@ -64,8 +64,8 @@ class Text2Vec:
         layers = len(model_params.nn_params)
         for idx in range(layers):
             if model_params.in_dim != model_params.nn_params[0] or idx > 0:
-                P = tf.Variable(tf.random_uniform([prev, model_params.nn_params[idx]]), name="P"+str(idx))
-#                 P = tf.get_variable("P"+str(idx), shape=[prev, model_params.nn_params[idx]], initializer=tf.contrib.layers.xavier_initializer())
+#                 P = tf.Variable(tf.random_uniform([prev, model_params.nn_params[idx]]), name="P"+str(idx))
+                P = tf.get_variable("P"+str(idx), shape=[prev, model_params.nn_params[idx]], initializer=tf.contrib.layers.xavier_initializer())
                 prev = model_params.nn_params[idx]
                 score = tf.tanh(tf.matmul(score, P))
 #                 print("\n")
@@ -156,7 +156,7 @@ class Text2Vec:
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             devres = self.cal_top_n(self.devset, "dev", N=2)
-#             testres = self.cal_top_n(self.testset, "test", N=2)
+            testres = self.cal_top_n(self.testset, "test", N=2)
             
 #             if devres and testres and devres[0] > max_accuracy[0][0]:
 #                 max_accuracy = [devres, testres]
@@ -204,7 +204,7 @@ class Text2Vec:
             else:
                 F1 += 1
         accuracy1, accuracy2 = T1/(T1+F1), T2/(T2+F2)
-        print("  %s\taccuracy1=%3.2f, accuracy2=%3.2f; T1=%d,F1=%d,T2=%d,F2=%d" 
+        print("  %s\tP1=%3.2f, P2=%3.2f; T1=%d,F1=%d,T2=%d,F2=%d" 
               %(str,accuracy1, accuracy2, T1, F1, T2, F2))
         return [accuracy1, accuracy2, T1, F1, T2, F2]
 
