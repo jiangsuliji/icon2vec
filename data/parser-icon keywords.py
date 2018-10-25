@@ -96,6 +96,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
     # pass 1: add icon description to test set 
     for collecion,icons in c.items():
         icon = icons[0]
+        c[collecion] = icons[1:]+[icons[0]]
         keyword = data[icon][0]
         testset.append((icon, keyword, find_weight(keyword)))
         data[icon] = data[icon][1:]
@@ -106,6 +107,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if icons == []:
                 continue
             icon = icons[0]
+            c[collecion] = icons[1:]+[icons[0]]
             if data[icon] == []:
                 continue
             keyword = data[icon][0]
@@ -120,6 +122,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if icons == []:
                 continue
             icon = icons[0]
+            c[collecion] = icons[1:]+[icons[0]]
             if data[icon] == []:
                 continue
             keyword = data[icon][0]
