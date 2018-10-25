@@ -141,8 +141,8 @@ class Text2Vec:
             training_idx_neg = [i+ half_data_entry for i in training_idx_neg]
             training_idx = np.concatenate((training_idx_pos, training_idx_neg),axis =0)
             shuffle(training_idx)
-            y = [1 if i < half_data_entry else 0 for i in training_idx]
-#             y = [self.trainset[2][i] for i in training_idx]
+#             y = [1 if i < half_data_entry else 0 for i in training_idx]
+            y = [self.trainset[2][i] for i in training_idx]
             
 #             print(training_idx_neg, training_idx_pos)
 #             print("===",training_idx)
