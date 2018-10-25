@@ -132,7 +132,8 @@ class Text2Vec:
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
-#         max_accuracy = [[0],[0],[0]]
+        max_accuracy_top1 = [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]]
+        max_accuracy_top2 = [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]]
         while epoch < self.model_params.max_epochs:   
 #             print(total_data_entry, half_data_entry)
             training_idx_pos = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
@@ -158,13 +159,16 @@ class Text2Vec:
             devres = self.cal_top_n(self.devset, "dev", N=2)
             testres = self.cal_top_n(self.testset, "test", N=2)
             
-#             if devres and testres and devres[0] > max_accuracy[0][0]:
-#                 max_accuracy = [devres, testres]
+            if devres and testres:
+                if devres[0][0] > max_accuracy_top1[0][0][0]:
+                    max_accuracy_top1 = [devres, testres]
+                if devres[0][1] > max_accuracy_top2[0][0][1]:
+                    max_accuracy_top2 = [devres, testres]
             epoch += 1
             
-#         print("results when max dev accu:")
-#         print(max_accuracy)
-        
+        print("results when max dev accu:")
+        print(max_accuracy_top1, "\n\n",max_accuracy_top2)
+#         self.print_top_accuracy_TP(max_accuracy_top1[0][0],max_accuracy_top1) 
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2):
@@ -204,7 +208,7 @@ class Text2Vec:
             P[n] = T[n]/(T[n]+F[n])
             
         self.print_top_accuracy_TP(P, T, F, str)
-        return P, T, F
+        return [P, T, F]
     
     # train set evaluation
     def test_on_train(self):
