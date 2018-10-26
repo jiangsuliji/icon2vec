@@ -16,6 +16,8 @@ from trainer.model import Text2Vec
 # filterwarnings(action='ignore', category=UserWarning, module='gensim')
 # import gensim.models as gs
 import pickle as pk
+from itertools import product
+
 
 # Authorship
 __author__ = "Ji Li"
@@ -41,6 +43,7 @@ class Searcher:
         self.config = config
         self.preload_dataset(self.config["embedding"])
         self.preload_misc()
+        self.fetch_all_modelparam_list()
         
     def preload_dataset(self, embeddingList):
         self.trainset = {}
@@ -62,3 +65,27 @@ class Searcher:
         fileObject = open("data/iconName2IndexMap.p", 'rb')
         self.mp_icon2idx = pk.load(fileObject)
         # print(mp_icon2idx)
+        
+    def fetch_all_modelparam_list(self):
+        self.modelParamsSettingList = [dict(zip(self.config, v)) for v in product(*self.config.values())]
+        print("Total Length of Exp=", len(self.modelParamsSettingList))
+        
+    def create_modelParams(self, s):
+        return ModelParams(in_dim=300, max_epochs=s["max_epochs"], batch_size=s["batch_size"], 
+        learning_rate=s["learning_rate"], dropout=s["dropout"], class_threshold=.5, nn_params = s["nn_params"])
+        
+    def create_trainer(self, s):
+        return Text2Vec(self.create_modelParams(s), num_icons = len(self.mp_icon2idx), trainset = self.trainset[s["embedding"]], 
+                        devset = self.devset[s["embedding"]], testset = self.testset[s["embedding"]])
+    
+    def run(self):
+        for expidx, s in enumerate(self.modelParamsSettingList):
+            print(expidx, "EXP setting:",s)
+        
+        
+        
+        
+        
+        
+        
+        

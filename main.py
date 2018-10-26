@@ -41,9 +41,10 @@ config = {
     "max_epochs": [100], 
     "learning_rate": [0.1, 0.01, 0.001, 0.0001, 0.00001], 
     "batch_size": [4,16,32], 
+    "dropout": [0.0, 0.1, 0.2, 0.3],
     "embedding": ["word2vec", "fasttext", "glove"]
 }
 
 searcher = Searcher(config)
-
+searcher.run()
 
