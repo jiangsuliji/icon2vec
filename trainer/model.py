@@ -168,7 +168,7 @@ class Text2Vec:
         print(max_accuracy_top2)
         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
         self.print_top_accuracy(max_accuracy_top2[1],"test") 
-    
+        return max_accuracy_top2
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2):

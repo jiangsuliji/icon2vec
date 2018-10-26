@@ -40,3 +40,9 @@ fileObject.close()
 # create model
 model = Text2Vec(modelParams, num_icons = len(mp_icon2idx), trainset = trainset, devset = devset, testset = testset)
 model.train()
+
+
+
+
+
+
