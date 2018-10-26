@@ -8,7 +8,7 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-    "useNewIconCVS": False,
+    "useNewIconCVS": True,
     "useBiGram": False, 
     "devsize": 100, 
     "testsize":100,
@@ -111,6 +111,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if data[icon] == []:
                 continue
             keyword = data[icon][0]
+#             print(icon, keyword)
             testset.append((icon, keyword, find_weight(keyword)))
             data[icon] = data[icon][1:]
             testsz -= 1
@@ -177,6 +178,7 @@ generateNegative(trainset)
 # generateNegative(devset)        
 # generateNegative(testset)        
 
+print(testset)
             
 # print(len(trainset)+ len(testset)+ len(devset))
 print("generated train,dev,test (saved in training folder) size:", len(trainset), len(devset), len(testset))
