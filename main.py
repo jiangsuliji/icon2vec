@@ -28,8 +28,6 @@ __email__ = "jili5@microsoft.com"
 # fileObject.close()
 # # print(len(trainset), len(devset), trainset[0])
 
-
-
 # # create model
 # model = Text2Vec(modelParams, num_icons = len(mp_icon2idx), trainset = trainset, devset = devset, testset = testset)
 # model.train()
@@ -38,7 +36,7 @@ __email__ = "jili5@microsoft.com"
 # top level params to control the script
 config = {
     "nn_params": [[200],[300],[400],[300,300]],
-    "max_epochs": [100], 
+    "max_epochs": [5], 
     "learning_rate": [0.1, 0.01, 0.001, 0.0001, 0.00001], 
     "batch_size": [4,16,32], 
     "dropout": [0.0, 0.1, 0.2, 0.3],

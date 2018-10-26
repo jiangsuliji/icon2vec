@@ -17,6 +17,7 @@ from trainer.model import Text2Vec
 # import gensim.models as gs
 import pickle as pk
 from itertools import product
+import sys, os
 
 
 # Authorship
@@ -32,8 +33,13 @@ __email__ = "jili5@microsoft.com"
 #     "embedding": ["word2vec", "fasttext", "glove"]
 # }
 
-# nn_params =  [300] # for additional hidden layers
-# modelParams = ModelParams(in_dim=300, max_epochs=300, batch_size=32, learning_rate=0.003, dropout=0.1, class_threshold=.5, nn_params = nn_params)
+# Disable
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def enablePrint():
+    sys.stdout = sys.__stdout__
 
 class Searcher:
     """Class for run train/eval using a range of parameter settings"""
@@ -78,11 +84,24 @@ class Searcher:
         return Text2Vec(self.create_modelParams(s), num_icons = len(self.mp_icon2idx), trainset = self.trainset[s["embedding"]], 
                         devset = self.devset[s["embedding"]], testset = self.testset[s["embedding"]])
     
+    def run_one_setting(self, s):
+        trainer = self.create_trainer(s)
+        rtn = trainer.train()
+        trainer.close()
+        del trainer
+        return rtn
+    
+    
     def run(self):
+        max_accuracy_top2 = [[0,0],[0,0]] 
+        max_s = {}
         for expidx, s in enumerate(self.modelParamsSettingList):
             print(expidx, "EXP setting:",s)
-        
-        
+            blockPrint()
+            self.run_one_setting(s)
+            enablePrint()
+            
+            
         
         
         

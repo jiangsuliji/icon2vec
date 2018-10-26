@@ -242,3 +242,6 @@ class Text2Vec:
         s = s[:-1]
         print(s)
         
+    def close(self):
+        self.session.close()
+        tf.reset_default_graph()
