@@ -132,8 +132,7 @@ class Text2Vec:
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
-        max_accuracy_top1 = [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]]
-        max_accuracy_top2 = [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]]
+        max_accuracy_top2 = [[0,0],[0,0]] 
         while epoch < self.model_params.max_epochs:   
 #             print(total_data_entry, half_data_entry)
             training_idx_pos = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
@@ -159,16 +158,17 @@ class Text2Vec:
             devres = self.cal_top_n(self.devset, "dev", N=2)
             testres = self.cal_top_n(self.testset, "test", N=2)
             
+            # now only record the entry when it hits the maximum devset P@1
             if devres and testres:
-                if devres[0][0] > max_accuracy_top1[0][0][0]:
-                    max_accuracy_top1 = [devres, testres]
-                if devres[0][1] > max_accuracy_top2[0][0][1]:
+                if devres[1] > max_accuracy_top2[0][1]:
                     max_accuracy_top2 = [devres, testres]
             epoch += 1
             
         print("results when max dev accu:")
-        print(max_accuracy_top1, "\n\n",max_accuracy_top2)
-#         self.print_top_accuracy_TP(max_accuracy_top1[0][0],max_accuracy_top1) 
+        print(max_accuracy_top2)
+        self.print_top_accuracy(max_accuracy_top2[0],"dev") 
+        self.print_top_accuracy(max_accuracy_top2[1],"test") 
+    
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2):
@@ -208,9 +208,10 @@ class Text2Vec:
             P[n] = T[n]/(T[n]+F[n])
             
         self.print_top_accuracy_TP(P, T, F, str)
-        return [P, T, F]
+        return P
     
     # train set evaluation
+    # TODO: update
     def test_on_train(self):
         res = self.session.run(self.prob, feed_dict={
                 self.col:self.trainset[0],
@@ -232,5 +233,12 @@ class Text2Vec:
             s += "T"+str(i+1)+"="+str(T[i]) + ",F" + str(i+1)+"="+str(F[i])+","
         s = s[:-1]
         print(s)
-            
+    
+    def print_top_accuracy(self,P,st):
+        s = "\t"+st+"\t"
+        for i in range(len(P)):
+            s+= "P" +str(i+1)+"="
+            s+= "%3.2f," %(P[i])
+        s = s[:-1]
+        print(s)
         

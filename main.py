@@ -13,7 +13,7 @@ __email__ = "jili5@microsoft.com"
 
 # create model params
 nn_params =  [300] # for additional hidden layers
-modelParams = ModelParams(in_dim=300, max_epochs=1000, batch_size=32, learning_rate=0.003, dropout=0.1, class_threshold=.5, nn_params = nn_params)
+modelParams = ModelParams(in_dim=300, max_epochs=300, batch_size=32, learning_rate=0.003, dropout=0.1, class_threshold=.5, nn_params = nn_params)
 
 # precessing
 # load data, map
