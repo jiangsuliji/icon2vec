@@ -94,12 +94,18 @@ class Searcher:
     
     def run(self):
         max_accuracy_top2 = [[0,0],[0,0]] 
-        max_s = {}
+        max_s = None
         for expidx, s in enumerate(self.modelParamsSettingList):
             print(expidx, "EXP setting:",s)
             blockPrint()
-            self.run_one_setting(s)
+            res = self.run_one_setting(s)
             enablePrint()
+            print(res)
+            if res[0][1] > max_accuracy_top2[0][1]:
+                max_accuracy_top2 = res
+                max_s = s
+        print("Finally!!!!")
+        print(max_accuracy_top2, max_s)
             
             
         
