@@ -12,7 +12,7 @@ params = {
     "useBiGram": False, 
     "devsize": 100, 
     "testsize":100,
-    "averageWeight": True 
+    "averageWeight": False 
 }
 
 
