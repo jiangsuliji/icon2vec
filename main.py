@@ -8,24 +8,14 @@ from trainer.searcher import Searcher
 __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
 
-# top level params to control the script
-# config = {
-#     "nn_params": [[300],[400],[300,300]],
-#     "max_epochs": [1000], 
-#     "learning_rate": [0.1, 0.01, 0.001, 0.0001, 0.00001], 
-#     "batch_size": [32], 
-#     "dropout": [0.0, 0.2],
-#     "embedding": ["word2vec", "fasttext", "glove"]
-# }
-
 config = {
     "nn_params": [[300]],
     "max_epochs": [1000], 
-    "learning_rate": [0.0001], 
-    "batch_size": [32], 
-    "dropout": [0.0,0.1,0.2],
+    "learning_rate": [0.01, 0.003, 0.001], 
+    "batch_size": [1024, 2048], 
+    "dropout": [0.1, 0.0],
 #     "embedding": ["word2vec"]
-    "embedding": ["word2vec", "glove"]
+    "embedding": ["glove"]
 }
 
 searcher = Searcher(config)

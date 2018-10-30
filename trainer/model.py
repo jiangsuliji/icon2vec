@@ -156,7 +156,7 @@ class Text2Vec:
             current_loss = sum(current_loss)
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
-            if epoch % 5 == 0:
+            if epoch % 10 == 0:
                 devres = self.cal_top_n(self.devset, "dev", N=2)
                 testres = self.cal_top_n(self.testset, "test", N=2)
             
