@@ -56,9 +56,9 @@ mp_icon2idx = pk.load(fileObject)
 fileObject.close()
 
 # preprocess each set one by one
-# parse_raw_input("train", "word2vec")
-# parse_raw_input("dev", "word2vec")
-# parse_raw_input("test", "word2vec")
+parse_raw_input("train", "word2vec")
+parse_raw_input("dev", "word2vec")
+parse_raw_input("test", "word2vec")
 
 # parse_raw_input("train", "fasttext")
 # parse_raw_input("dev", "fasttext")

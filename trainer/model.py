@@ -8,6 +8,7 @@ Based on Ben Eisner, Tim Rocktaschel's good work.
 
 # External dependencies
 import tensorflow as tf
+from tensorflow.python.framework import ops
 import numpy as np
 from os import environ
 from random import shuffle
@@ -67,7 +68,8 @@ class Text2Vec:
 #                 P = tf.Variable(tf.random_uniform([prev, model_params.nn_params[idx]]), name="P"+str(idx))
                 P = tf.get_variable("P"+str(idx), shape=[prev, model_params.nn_params[idx]], initializer=tf.contrib.layers.xavier_initializer())
                 prev = model_params.nn_params[idx]
-                score = tf.tanh(tf.matmul(score, P))
+                score = tf.matmul(score, P)
+#                 score = tf.tanh(tf.matmul(score, P))
 #                 print("\n")
 #                 print("P",P)
 #                 print("score", score)
@@ -77,7 +79,7 @@ class Text2Vec:
             if idx != layers - 1:
                 score = tf.multiply(score, V)
             else:
-                score = tf.multiply(tf.nn.dropout(score, (1-model_params.dropout)), V)
+                score = tf.multiply(score, tf.nn.dropout(V, (1-model_params.dropout)))
 #             print("score", score)
 #             print("\n")
 #         print(score)
@@ -87,10 +89,9 @@ class Text2Vec:
 
         # Probability of match
         self.prob = tf.sigmoid(self.score)
-
         # Calculate the cross-entropy loss
-        self.loss = tf.nn.weighted_cross_entropy_with_logits(targets=self.score, logits=self.y, pos_weight=1)
-        
+#         self.loss = tf.nn.weighted_cross_entropy_with_logits(targets=self.score, logits=self.y, pos_weight=1)
+        self.loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.score, labels=self.y) 
         
     def initializeDataset(self, trainset, devset, testset):
         icon_idx, phrase_embedding, labels = [], [], []
@@ -244,4 +245,5 @@ class Text2Vec:
         
     def close(self):
         self.session.close()
+        ops.reset_default_graph()
         tf.reset_default_graph()
