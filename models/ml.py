@@ -1,11 +1,9 @@
 """ML TAS model caller"""
 
-import numpy as np
 import common
 import secret
 import requests
 import json
-import re
 
 # Authorship
 __author__ = "Ji Li"
@@ -29,21 +27,39 @@ class Model_ML:
 		if r.status_code != 200:
 			raise
 		# print(r.text)
-		self.processResponse(r.text)
+		return self.processResponse(r.text)
 		
 		
 	def processResponse(self, responseText):
-		"""given the TAS text response, find the top N suggested icons"""
-		# sample return: [('Man.svg', 0.05994971841573715), ('MaleProfile.svg', 0.0498545840382576)]
+		"""given the text response, find the top N suggested icons"""
+		# sample return: [['Man.svg', 0.05994971841573715], ['MaleProfile.svg', 0.0498545840382576]]
 		r = json.loads(responseText)['presentationAnalyses']['slideAnalyses'][0]['text2IconOutput']['iconInfos']['m_iconInfoList']
-		print(r)
+		# print(r)
 		if len(r) != self.N:
 			raise
-		res = [(self.mp_icondescription2filename[item['m_iconId']]+".svg", item['m_score']) for item in r]
+		res = [[self.mp_icondescription2filename[item['m_iconId']]+".svg", item['m_score']] for item in r]
 		res = sorted(res, key=lambda k:k[1], reverse=True)
 		# print(res)
 		return res
 		
-		
-		
-m = Model_ML()
+# # a simple example to call it
+# ML = Model_ML()
+# res = ML("man")
+# print(res)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
