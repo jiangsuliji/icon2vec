@@ -97,9 +97,9 @@ class Searcher:
         max_s = None
         for expidx, s in enumerate(self.modelParamsSettingList):
             print(expidx, "EXP setting:",s)
-            blockPrint()
+#             blockPrint()
             res = self.run_one_setting(s)
-            enablePrint()
+#             enablePrint()
             print(res)
             if res[0][1] > max_accuracy_top2[0][1]:
                 max_accuracy_top2 = res
