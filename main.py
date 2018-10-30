@@ -20,10 +20,11 @@ __email__ = "jili5@microsoft.com"
 
 config = {
     "nn_params": [[300]],
-    "max_epochs": [800], 
-    "learning_rate": [0.01,0.03, 0.1], 
+    "max_epochs": [1000], 
+    "learning_rate": [0.0001], 
     "batch_size": [32], 
-    "dropout": [0.0,0.1],
+    "dropout": [0.0,0.1,0.2],
+#     "embedding": ["word2vec"]
     "embedding": ["word2vec", "glove"]
 }
 

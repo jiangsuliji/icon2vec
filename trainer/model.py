@@ -156,8 +156,9 @@ class Text2Vec:
             current_loss = sum(current_loss)
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
-            devres = self.cal_top_n(self.devset, "dev", N=2)
-            testres = self.cal_top_n(self.testset, "test", N=2)
+            if epoch % 5 == 0:
+                devres = self.cal_top_n(self.devset, "dev", N=2)
+                testres = self.cal_top_n(self.testset, "test", N=2)
             
             # now only record the entry when it hits the maximum devset P@1
             if devres and testres:
@@ -200,11 +201,12 @@ class Text2Vec:
             raise
         P, T, F = [-404]*N, [0]*N, [0]*N
         for i in range(len(results)):
-            for n in range(N):
-                if icons[i] in results[i][:n+1]:
-                    T[n] += 1
-                else:
-                    F[n] += 1
+            if labels[i] == 1.0:
+                for n in range(N):
+                    if icons[i] in results[i][:n+1]:
+                        T[n] += 1
+                    else:
+                        F[n] += 1
         for n in range(N):
             P[n] = T[n]/(T[n]+F[n])
             
