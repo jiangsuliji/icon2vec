@@ -69,10 +69,13 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if len(line.rstrip().split("\"")) != 1:
                 keywords = line.rstrip().split("\"")[1]
                 keywords = keywords.split(", ")
+#                 print(line, keywords)
                 if name not in keywords:
                     keywords = [name] + keywords
+                else:
+                    keywords = [name] + [k for k in keywords if k != name]
             else:
-    #             print(line, keywords)
+#                 print(line, keywords)
                 keywords = line.rstrip().split(",")[-1]
                 if name not in keywords:
                     keywords = [name] + [keywords]
@@ -96,7 +99,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
     # pass 1: add icon description to test set 
     for collecion,icons in c.items():
         icon = icons[0]
-        c[collecion] = icons[1:]+[icons[0]]
+        c[collecion] = icons[1:]#+[icons[0]]
         keyword = data[icon][0]
         testset.append((icon, keyword, find_weight(keyword)))
         data[icon] = data[icon][1:]
@@ -107,7 +110,7 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
             if icons == []:
                 continue
             icon = icons[0]
-            c[collecion] = icons[1:]+[icons[0]]
+            c[collecion] = icons[1:]#+[icons[0]]
             if data[icon] == []:
                 continue
             keyword = data[icon][0]
@@ -120,10 +123,10 @@ def load_icon_description_csv(isNewIcon=True, useBiGram=False, devsz=100, testsz
     # pass 3: fill in dev set, RR fashion
     while devsz != 0:
         for collecion,icons in c.items():
-            if icons == []:
+            if icons == [] or icons == None:
                 continue
             icon = icons[0]
-            c[collecion] = icons[1:]+[icons[0]]
+            c[collecion] = icons[1:]#+[icons[0]]
             if data[icon] == []:
                 continue
             keyword = data[icon][0]
@@ -178,7 +181,7 @@ generateNegative(trainset)
 # generateNegative(devset)        
 # generateNegative(testset)        
 
-print(testset)
+# print(testset)
             
 # print(len(trainset)+ len(testset)+ len(devset))
 print("generated train,dev,test (saved in training folder) size:", len(trainset), len(devset), len(testset))
