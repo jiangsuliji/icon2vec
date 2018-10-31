@@ -9,12 +9,12 @@ __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
 
 config = {
-    "in_dim":[600],
     "nn_params": [[600]],
     "max_epochs": [1000], 
     "learning_rate": [0.003], 
     "batch_size": [1024], 
-    "dropout": [0.1],
+    "dropout": [0.0],
+    "verbose": [True],
 #     "embedding": ["word2vec"]
     "embedding": ["word2vec-glove"]
 }

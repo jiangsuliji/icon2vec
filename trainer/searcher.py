@@ -77,7 +77,7 @@ class Searcher:
         print("Total Length of Exp=", len(self.modelParamsSettingList))
         
     def create_modelParams(self, s):
-        return ModelParams(in_dim=s["in_dim"], max_epochs=s["max_epochs"], batch_size=s["batch_size"], 
+        return ModelParams(in_dim=s["nn_params"][0], max_epochs=s["max_epochs"], batch_size=s["batch_size"], 
         learning_rate=s["learning_rate"], dropout=s["dropout"], class_threshold=.5, nn_params = s["nn_params"])
         
     def create_trainer(self, s):
@@ -97,9 +97,10 @@ class Searcher:
         max_s = None
         for expidx, s in enumerate(self.modelParamsSettingList):
             print(expidx, "EXP setting:",s)
-#             blockPrint()
+            if s["verbose"] == False:
+                blockPrint()
             res = self.run_one_setting(s)
-#             enablePrint()
+            enablePrint()
             print(res)
             if res[0][1] > max_accuracy_top2[0][1]:
                 max_accuracy_top2 = res
