@@ -16,6 +16,7 @@ config = {
     "dropout": [0.0],
     "verbose": [True],
 #     "embedding": ["word2vec"]
+#     "embedding": [["word2vec","glove"]]
 #     "embedding": ["glove"]
     "embedding": ["word2vec-glove"]
 }

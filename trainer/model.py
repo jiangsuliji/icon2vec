@@ -162,7 +162,7 @@ class Text2Vec:
             
             # now only record the entry when it hits the maximum devset P@1
             if devres and testres:
-                if testres[1] > max_accuracy_top2[1][1]:
+                if devres[1] > max_accuracy_top2[0][1]:
                     max_accuracy_top2 = [devres, testres]
             epoch += 1
             
