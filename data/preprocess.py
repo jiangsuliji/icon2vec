@@ -11,11 +11,11 @@ __email__ = "jili5@microsoft.com"
 # main process func
 def parse_raw_input(setname, embedding_method):
     phrase_embedding = []
-    if embedding_method == "word2vec":
+    if "word2vec"in embedding_method:
         w2v = Word2Vec()
-    elif embedding_method == "fasttext":
+    if "fasttext" in embedding_method:
         fast = FastText('fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
-    elif embedding_method == "glove":
+    if "glove" in embedding_method:
         glove = GloVe('glove/glove.42B.300d.txt.bin', loadbinary=True)
 
     with open("training/"+setname+".txt", "r") as f:
@@ -29,21 +29,23 @@ def parse_raw_input(setname, embedding_method):
             idx = mp_icon2idx[icon]
             
             # find embedding for phrase
-            if embedding_method == "word2vec":
-                embedding = w2v[keywords]
-            elif embedding_method == "fasttext":                
-                embedding = fast[keywords]
-            elif embedding_method == "glove":
-                embedding = glove[keywords]
-            else:
+            embedding = np.array([])
+            if "word2vec" in embedding_method:
+                embedding = np.concatenate((embedding,w2v[keywords]), axis=0)
+            if "fasttext" in embedding_method:
+                embedding = np.concatenate((embedding,fast[keywords]), axis=0)
+            if "glove"  in embedding_method:
+                embedding = np.concatenate((embedding,glove[keywords]), axis=0)
+            if "word2vec" not in embedding_method and "fasttext" not in embedding_method and "glove" not in embedding_method:
                 raise
 #             print(icon, keywords, label, idx, embedding)
             # phrase_embedding: iconIdx, embedding for phrase, label -- icon name, phrase idx
             phrase_embedding.append([idx, list(embedding), float(label), icon, len(phrase_embedding)])
 #             break
     print(setname, ":", phrase_embedding[-1])
+    print("embedding lenght=",len(phrase_embedding[-1][1]))
     
-    fileObject = open("training/"+setname+"."+embedding_method+".p", "wb")
+    fileObject = open("training/"+setname+"."+'-'.join(embedding_method)+".p", "wb")
     pk.dump(phrase_embedding, fileObject)
     fileObject.close()
         
@@ -56,16 +58,21 @@ mp_icon2idx = pk.load(fileObject)
 fileObject.close()
 
 # preprocess each set one by one
-parse_raw_input("train", "word2vec")
-parse_raw_input("dev", "word2vec")
-parse_raw_input("test", "word2vec")
+# parse_raw_input("train", ["word2vec"])
+# parse_raw_input("dev", ["word2vec"])
+# parse_raw_input("test", ["word2vec"])
 
-# parse_raw_input("train", "fasttext")
-# parse_raw_input("dev", "fasttext")
-# parse_raw_input("test", "fasttext")
+# parse_raw_input("train", ["fasttext"])
+# parse_raw_input("dev", ["fasttext"])
+# parse_raw_input("test", ["fasttext"])
 
-parse_raw_input("train", "glove")
-parse_raw_input("dev", "glove")
-parse_raw_input("test", "glove")
+# parse_raw_input("train", ["glove"])
+# parse_raw_input("dev", ["glove"])
+# parse_raw_input("test", ["glove"])
+
+
+parse_raw_input("train", ["word2vec","glove"])
+parse_raw_input("dev", ["word2vec","glove"])
+parse_raw_input("test", ["word2vec","glove"])
 
 print("done")
