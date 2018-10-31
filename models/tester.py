@@ -12,6 +12,7 @@ __email__ = "jili5@microsoft.com"
 class Tester:
 	"""compare ML and MSRA and (our model)"""
 	def __init__(self):
+		self.
 		self.ml = ml.Model_ML()
 		self.msra = msra.Model_MSRA()
 		
