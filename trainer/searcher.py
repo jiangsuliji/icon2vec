@@ -77,7 +77,7 @@ class Searcher:
         print("Total Length of Exp=", len(self.modelParamsSettingList))
         
     def create_modelParams(self, s):
-        return ModelParams(in_dim=300, max_epochs=s["max_epochs"], batch_size=s["batch_size"], 
+        return ModelParams(in_dim=s["in_dim"], max_epochs=s["max_epochs"], batch_size=s["batch_size"], 
         learning_rate=s["learning_rate"], dropout=s["dropout"], class_threshold=.5, nn_params = s["nn_params"])
         
     def create_trainer(self, s):

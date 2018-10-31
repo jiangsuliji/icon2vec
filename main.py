@@ -9,13 +9,14 @@ __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
 
 config = {
-    "nn_params": [[300]],
+    "in_dim":[600],
+    "nn_params": [[600]],
     "max_epochs": [1000], 
-    "learning_rate": [0.01, 0.003, 0.001], 
-    "batch_size": [1024, 2048], 
-    "dropout": [0.1, 0.0],
+    "learning_rate": [0.003], 
+    "batch_size": [1024], 
+    "dropout": [0.1],
 #     "embedding": ["word2vec"]
-    "embedding": ["glove"]
+    "embedding": ["word2vec-glove"]
 }
 
 searcher = Searcher(config)
