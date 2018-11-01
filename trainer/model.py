@@ -263,21 +263,32 @@ class Text2VecMulti:
         
         
     def initializeDataset(self, trainset, devset, testset):
-        pass
+        phrase_embedding, labels, keywords, icons = [], [], [], []
+        for item in trainset:
+            phrase_embedding.append(item[0])
+            labels.append(item[1])
+            keywords.append(item[2])
+            icons.append(item[3])
+        self.trainset = [np.array(phrase_embedding), np.array(labels), np.array(keywords), np.array(icons)]
+        print("train input:",self.trainset[0].shape, "label:", self.trainset[1].shape)
         
-#         icon_idx, phrase_embedding, labels = [], [], []
-#         for item in devset:
-#             icon_idx.append(item[0])
-#             phrase_embedding.append(item[1])
-#             labels.append(item[2])
-#         self.devset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        phrase_embedding, labels, keywords, icons = [], [], [], []
+        for item in devset:
+            phrase_embedding.append(item[0])
+            labels.append(item[1])
+            keywords.append(item[2])
+            icons.append(item[3])
+        self.devset = [np.array(phrase_embedding), np.array(labels), np.array(keywords), np.array(icons)]
+        print("dev input:",self.devset[0].shape, "label:", self.devset[1].shape)
         
-#         icon_idx, phrase_embedding, labels = [], [], []
-#         for item in testset:
-#             icon_idx.append(item[0])
-#             phrase_embedding.append(item[1])
-#             labels.append(item[2])
-#         self.testset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        phrase_embedding, labels, keywords, icons = [], [], [], []
+        for item in testset:
+            phrase_embedding.append(item[0])
+            labels.append(item[1])
+            keywords.append(item[2])
+            icons.append(item[3])
+        self.testset = [np.array(phrase_embedding), np.array(labels), np.array(keywords), np.array(icons)]      
+        print("test input:",self.testset[0].shape, "label:", self.testset[1].shape)
         
         
     def initializeSession(self):
@@ -288,9 +299,11 @@ class Text2VecMulti:
     
     # train the model using the appropriate parameters
     def train(self):
-        """Train the model on a given knowledge base"""
-        pass 
-    
+        """Train the model"""
+        pass
+        
+        
+        
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2):
         results = [] # for phrase - top N icons
