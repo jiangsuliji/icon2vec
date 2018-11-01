@@ -46,7 +46,7 @@ def parse_raw_input(setname, embedding_method):
             phrase_embedding.append([idx, list(embedding), float(label), icon, len(phrase_embedding)])
 #             break
     print(setname, ":", phrase_embedding[-1])
-    print("embedding lenght=",len(phrase_embedding[-1][1]))
+    print("embedding length=",len(phrase_embedding[-1][1]))
     
     fileObject = open("training/"+setname+"."+'-'.join(embedding_method)+".p", "wb")
     pk.dump(phrase_embedding, fileObject)
