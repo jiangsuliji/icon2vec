@@ -259,24 +259,6 @@ class Text2VecMulti:
         self.initializeDataset(trainset, devset, testset)
         self.model_params = model_params
         self.initializeModel()
-       
-    
-    def initializeModel(self):
-        # row - phrase input to the graph
-        self.phrase_vec = tf.placeholder(tf.float32, shape=[None, self.model_params.in_dim], name='phrase_vec')
-            
-        # corect label
-        self.y = tf.placeholder(tf.float32, shape=[None, self.num_icons], name='y')
-        
-        # single layer multiclassifier
-        if self.model_params.nn_params == []:
-            W = tf.get_variable("W", shape=[self.model_params.in_dim, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
-            self.logits = tf.matmul(self.phrase_vec, W)
-        else:
-            # todo multi layer
-            pass
-#         print(self.logits, self.y)
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
         
         
     def initializeDataset(self, trainset, devset, testset):
@@ -314,6 +296,24 @@ class Text2VecMulti:
         self.session = tf.Session()
         init = tf.global_variables_initializer()
         self.session.run(init)
+           
+    
+    def initializeModel(self):
+        # row - phrase input to the graph
+        self.phrase_vec = tf.placeholder(tf.float32, shape=[None, self.model_params.in_dim], name='phrase_vec')
+            
+        # corect label
+        self.y = tf.placeholder(tf.float32, shape=[None, self.num_icons], name='y')
+        
+        # single layer multiclassifier
+        if self.model_params.nn_params == []:
+            W = tf.get_variable("W", shape=[self.model_params.in_dim, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
+            self.logits = tf.matmul(self.phrase_vec, W)
+        else:
+            # todo multi layer
+            pass
+#         print(self.logits, self.y)
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
     
     
     # train the model using the appropriate parameters
@@ -325,104 +325,67 @@ class Text2VecMulti:
         self.initializeSession()
         epoch = 0
 
-        max_accuracy_top2 = [[0,0],[0,0]] 
+        max_accuracy_top2 = [0,0] #dev p@2, test p@2
         while epoch < self.model_params.max_epochs:   
             training_idx = np.random.randint(self.num_icons, size=self.model_params.batch_size)
-            return
-            
-# #             print("===",training_idx)
-# #             print(y)
         
-#             _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
-#                 self.col:self.trainset[0][training_idx],
-#                 self.phrase_vec: self.trainset[1][training_idx],
-#                 self.y:np.array(y)
-#             })
-#             current_loss = sum(current_loss)
+            _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
+                self.phrase_vec:self.trainset[0][training_idx],
+                self.y:self.trainset[1][training_idx]
+            })
 
-#             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
-#             if epoch % 10 == 0:
-#                 devres = self.cal_top_n(self.devset, "dev", N=2)
-#                 testres = self.cal_top_n(self.testset, "test", N=2)
+            print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
+            if epoch % 10 == 0:
+                devres = self.cal_top_n(self.devset, "dev", N=2)
+                testres = self.cal_top_n(self.testset, "test", N=2)
             
 #             # now only record the entry when it hits the maximum devset P@1
-#             if devres and testres:
-#                 if devres[1] > max_accuracy_top2[0][1]:
-#                     max_accuracy_top2 = [devres, testres]
-#             epoch += 1
+            if devres and testres:
+                if devres > max_accuracy_top2[0]:
+                    max_accuracy_top2 = [devres, testres]
+            epoch += 1
             
-#         print("results when max dev accu:")
-#         print(max_accuracy_top2)
-#         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
-#         self.print_top_accuracy(max_accuracy_top2[1],"test") 
+        print("results when max dev accu:")
+        print(max_accuracy_top2, "devP2=",max_accuracy_top2[0], "testP2=", max_accuracy_top2[1])
+        self.close()
 #         return max_accuracy_top2       
         
         
-    # find top N icon indices and return P,R,F1,TP,TN,FP,FN
+    # find top N icon indices and return P
     def cal_top_n(self, dataset, str, N=2):
-        results = [] # for phrase - top N icons
-        indices_arr = range(0, self.num_cols)
-        for ph_idx in range(len(dataset[1])):
-#             print(dataset[1][ph_idx])
-#             print(np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1)).shape)
-            res = self.session.run(self.prob, feed_dict={
-                    self.col:indices_arr,
-                    self.phrase_vec: np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1))
-            })
+        res = self.session.run(self.logits, feed_dict={
+            self.phrase_vec:dataset[0],
+        })
+#         print(res,res.shape)
+        results = [sorted(range(0, self.num_icons), key=lambda j:res[i][j], reverse=True)[:N] for i in range(len(dataset[0]))]
 
-            results.append(sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N])
-        return self.cal_metrics(results, dataset[2], dataset[0], str, N=N)
-        
+#         print(res[0][results[0]], results[0])
+        return self.cal_metrics(results, dataset, str)
+
         
     # calculate details
-    def cal_metrics(self, results, labels, icons, str, N=2):
-        # results: top N icon indices returned by Text2Vec for each phrase
-        # label for each phrase-icon pair
-        # icon idx for each phrase-icon pair
-#         print(results)
-#         print(labels)
-#         print(icons)
-        if len(results) != len(labels) or len(results) != len(icons):
-            print("error: len of inputs not equal")
+    def cal_metrics(self, results, dataset, str):
+        # results: top N idx
+#         print(results[0], dataset[1][0])
+#         print(len(results), len(dataset[1]))
+        if len(results) != len(dataset[1]):
             raise
-        P, T, F = [-404]*N, [0]*N, [0]*N
-        for i in range(len(results)):
-            if labels[i] == 1.0:
-                for n in range(N):
-                    if icons[i] in results[i][:n+1]:
-                        T[n] += 1
-                    else:
-                        F[n] += 1
-        for n in range(N):
-            P[n] = T[n]/(T[n]+F[n])
-            
+        T, F, P = 0, 0, 0
+        for idx, label in enumerate(dataset[1]):
+            if label[results[idx][0]] == 1 or label[results[idx][1]] == 1 :
+                T+=1
+            else: 
+                F+=1
+        P = T/(T+F)
         self.print_top_accuracy_TP(P, T, F, str)
         return P
-    
-    def test_on_train(self):
-        pass
        
     
     def print_top_accuracy_TP(self, P, T, F, st):
-        if len(P) != len(T) or len(T) != len(F):
-            raise
         s = "\t"+st + "\t"
-        for i in range(len(P)):
-            s += "P" +str(i+1)+"="
-            s += "%3.2f," %(P[i])
-        s = s[:-1] + "; "
-        for i in range(len(T)):
-            s += "T"+str(i+1)+"="+str(T[i]) + ",F" + str(i+1)+"="+str(F[i])+","
-        s = s[:-1]
+        s += "P2=%3.2f;T=%d,F=%d" %(P,T,F)
         print(s)
     
-    def print_top_accuracy(self,P,st):
-        s = "\t"+st+"\t"
-        for i in range(len(P)):
-            s+= "P" +str(i+1)+"="
-            s+= "%3.2f," %(P[i])
-        s = s[:-1]
-        print(s)
         
     def close(self):
         self.session.close()
