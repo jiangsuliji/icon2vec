@@ -313,7 +313,7 @@ class Text2VecMulti:
             # todo multi layer
             pass
 #         print(self.logits, self.y)
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
+        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.y))
     
     
     # train the model using the appropriate parameters
@@ -334,8 +334,8 @@ class Text2VecMulti:
                 self.y:self.trainset[1][training_idx]
             })
 
-            print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             if epoch % 10 == 0:
+                print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
                 devres = self.cal_top_n(self.devset, "dev", N=2)
                 testres = self.cal_top_n(self.testset, "test", N=2)
             
@@ -372,7 +372,7 @@ class Text2VecMulti:
             raise
         T, F, P = 0, 0, 0
         for idx, label in enumerate(dataset[1]):
-            if label[results[idx][0]] == 1 or label[results[idx][1]] == 1 :
+            if label[results[idx][0]] == 1 or label[results[idx][1]] == 1:
                 T+=1
             else: 
                 F+=1
