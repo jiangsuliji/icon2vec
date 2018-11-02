@@ -258,8 +258,25 @@ class Text2VecMulti:
     def __init__(self, model_params, trainset, devset, testset):
         self.initializeDataset(trainset, devset, testset)
         self.model_params = model_params
-
+        self.initializeModel()
+       
+    
+    def initializeModel(self):
+        # row - phrase input to the graph
+        self.phrase_vec = tf.placeholder(tf.float32, shape=[None, self.model_params.in_dim], name='phrase_vec')
+            
+        # corect label
+        self.y = tf.placeholder(tf.float32, shape=[None, self.num_icons], name='y')
         
+        # single layer multiclassifier
+        if self.model_params.nn_params == []:
+            W = tf.get_variable("W", shape=[self.model_params.in_dim, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
+            self.logits = tf.matmul(self.phrase_vec, W)
+        else:
+            # todo multi layer
+            pass
+#         print(self.logits, self.y)
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
         
         
     def initializeDataset(self, trainset, devset, testset):
@@ -271,6 +288,8 @@ class Text2VecMulti:
             icons.append(item[3])
         self.trainset = [np.array(phrase_embedding), np.array(labels), np.array(keywords), np.array(icons)]
         print("train input:",self.trainset[0].shape, "label:", self.trainset[1].shape)
+        self.num_icons = self.trainset[1].shape[1]
+#         print(self.num_icons)
         
         phrase_embedding, labels, keywords, icons = [], [], [], []
         for item in devset:
@@ -300,8 +319,43 @@ class Text2VecMulti:
     # train the model using the appropriate parameters
     def train(self):
         """Train the model"""
-        pass
+        self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
+        minimization_op = self.optimizer.minimize(self.loss)
         
+        self.initializeSession()
+        epoch = 0
+
+        max_accuracy_top2 = [[0,0],[0,0]] 
+        while epoch < self.model_params.max_epochs:   
+            training_idx = np.random.randint(self.num_icons, size=self.model_params.batch_size)
+            return
+            
+# #             print("===",training_idx)
+# #             print(y)
+        
+#             _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
+#                 self.col:self.trainset[0][training_idx],
+#                 self.phrase_vec: self.trainset[1][training_idx],
+#                 self.y:np.array(y)
+#             })
+#             current_loss = sum(current_loss)
+
+#             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
+#             if epoch % 10 == 0:
+#                 devres = self.cal_top_n(self.devset, "dev", N=2)
+#                 testres = self.cal_top_n(self.testset, "test", N=2)
+            
+#             # now only record the entry when it hits the maximum devset P@1
+#             if devres and testres:
+#                 if devres[1] > max_accuracy_top2[0][1]:
+#                     max_accuracy_top2 = [devres, testres]
+#             epoch += 1
+            
+#         print("results when max dev accu:")
+#         print(max_accuracy_top2)
+#         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
+#         self.print_top_accuracy(max_accuracy_top2[1],"test") 
+#         return max_accuracy_top2       
         
         
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
