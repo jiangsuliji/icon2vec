@@ -30,7 +30,7 @@ __email__ = "jili5@microsoft.com"
 # searcher.run()
 
 # multi-class embedding
-modelParams = ModelParams(in_dim=300, max_epochs=1000, batch_size=128, learning_rate=0.001, class_threshold=0.5, dropout=0.1, nn_params = [])
+modelParams = ModelParams(in_dim=300, max_epochs=1000, batch_size=128, learning_rate=0.01, class_threshold=0.5, dropout=0.1, nn_params = [])
 
 # embedding = "word2vec"
 # embedding = "fasttext"

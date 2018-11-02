@@ -308,7 +308,7 @@ class Text2VecMulti:
         # single layer multiclassifier
         if self.model_params.nn_params == []:
             W = tf.get_variable("W", shape=[self.model_params.in_dim, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
-            self.logits = tf.matmul(self.phrase_vec, W)
+            self.logits = tf.matmul(self.phrase_vec, tf.nn.dropout(W,1-self.model_params.dropout))
         else:
             # todo multi layer
             pass
