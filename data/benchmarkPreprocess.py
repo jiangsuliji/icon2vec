@@ -16,8 +16,8 @@ class benchmarkPreprocessor:
         self.setname = setname
         self.embedding_method = embedding_method
         
-#         if "word2vec"in embedding_method:
-#             self.model = Word2Vec()
+        if "word2vec"in embedding_method:
+            self.model = Word2Vec()
 #         elif "fasttext" in embedding_method:
 #             self.model = FastText('fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
 #         elif "glove" in embedding_method:
@@ -36,13 +36,29 @@ class benchmarkPreprocessor:
 #         print(self.iconNum)
         fileObject.close()
     
+    def __genLabelIdx(self, label):
+        if label+".svg" in self.mp_icon2idx:
+            return self.mp_icon2idx[label+".svg"]
+        if label + "_LTR.svg" in self.mp_icon2idx:
+            return self.mp_icon2idx[label+"_LTR.svg"]
+        if label[-7:] == "Outline" and label[:-7]+"Solid.svg" in self.mp_icon2idx:
+            return self.mp_icon2idx[label[:-7]+"Solid.svg"]
+        if label == "Man":
+            return 0
+        if label == "CurveCounterclockwise":
+            return self.mp_icon2idx["CurveClockwise.svg"]
+        if label == "LineCurveCounterclockwise":
+            return self.mp_icon2idx["LineCurveClockwise.svg"]
+        if label == "BoardRoom":
+            return self.mp_icon2idx["Boardroom.svg"]
+        if label == "Australia":
+            return self.mp_icon2idx["Australlia.svg"]
+        print("missing:", label)
     
     def loadCSV(self):
         """main entry to load csv"""
         self.benchmark = self.__loadErikOveson_11_05_testset()        
-#         print(self.benchmark[0])
         self.__process_method_0()
-        
         print(self.benchmark[1:5])
     
     def __loadErikOveson_11_05_testset(self):
@@ -50,7 +66,7 @@ class benchmarkPreprocessor:
         # smaller. close to organic
         filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv" 
         # larger. with designer feedback
-#         filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss" 
+#         filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv" 
         res = []
         with open(filepath, 'r', encoding="utf8") as f:
             lineID = 0
@@ -79,15 +95,8 @@ class benchmarkPreprocessor:
             for i in items:
                 if re.match("^[A-Za-z0-9_-]*$", i):
                     cleaned_items.append(i)
-            self.benchmark[idx] = [' '.join(cleaned_items), label, originalSlideCID]
+            self.benchmark[idx] = [cleaned_items, self.__genLabelIdx(label), label, originalSlideCID]
         
-    
-    def genLabel(self, icons):
-        res = [0]*self.iconNum
-        for icon in icons:
-            res[self.mp_icon2idx[icon]] = 1
-        return res
-
     
     def outPut(self):
         fileObject = open("benchmarks/"+self.setname+"."+self.embedding_method[0]+".p", "wb")
