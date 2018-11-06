@@ -1,6 +1,7 @@
 """Preprocess train/dev/test.txt - generate the corresponding set for Erik's benchmark"""
 import numpy as np
 import pickle as pk
+import re
 from pretrained_embeddings import Word2Vec
 from pretrained_embeddings import FastText
 from pretrained_embeddings import GloVe 
@@ -37,10 +38,15 @@ class benchmarkPreprocessor:
     
     
     def loadCSV(self):
-        self.benchmark = self.__loadErikOveson_11_05_testset()
-        print(self.benchmark[0])
+        """main entry to load csv"""
+        self.benchmark = self.__loadErikOveson_11_05_testset()        
+#         print(self.benchmark[0])
+        self.__process_method_0()
+        
+        print(self.benchmark[1:5])
     
     def __loadErikOveson_11_05_testset(self):
+        """load """
         # smaller. close to organic
         filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv" 
         # larger. with designer feedback
@@ -52,16 +58,29 @@ class benchmarkPreprocessor:
                 if lineID == 0:
                     lineID += 1
                     continue
-                print(line)
+#                 print(line)
                 items = line.split(',')
+                if len(items) <4:
+                    continue
                 originalSlideCID = items[0]
                 label = items[1][9:]
-                phrase = ','.join(items[2])
+                phrase = ','.join(items[2:])
 #                 print(originalSlideCID,label,phrase)
                 res.append([phrase, label, originalSlideCID])
                 lineID += 1
         return res
     
+    def __process_method_0(self):
+        """remove #UNK_WORD #UNK_NUMBER non character symbol"""
+        for idx, item in enumerate(self.benchmark):
+            phrase, label, originalSlideCID = item[0], item[1], item[2]
+            items = phrase.split()
+            cleaned_items = []
+            for i in items:
+                if re.match("^[A-Za-z0-9_-]*$", i):
+                    cleaned_items.append(i)
+            self.benchmark[idx] = [' '.join(cleaned_items), label, originalSlideCID]
+        
     
     def genLabel(self, icons):
         res = [0]*self.iconNum
