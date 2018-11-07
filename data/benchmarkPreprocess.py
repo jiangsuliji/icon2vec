@@ -12,7 +12,8 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-    "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
+    "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
+#     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
 #     "embedding_method": "word2vec"
     "embedding_method": "glove"
@@ -71,6 +72,8 @@ class benchmarkPreprocessor:
             return self.mp_icon2idx["Boardroom.svg"]
         if label == "Australia":
             return self.mp_icon2idx["Australlia.svg"]
+        if label == "Workflow":
+            return self.mp_icon2idx["WorkFlow.svg"]
         print("missing:", label)
     
     def loadCSV(self):
@@ -96,10 +99,17 @@ class benchmarkPreprocessor:
                 if len(items) <4:
                     continue
                 originalSlideCID = items[0]
-                label = items[1][9:]
+                labels = []
+                labelentries = items[1].split()
+                for labelentry in labelentries:
+                    labels.append(labelentry[9:])
                 phrase = ','.join(items[2:])
 #                 print(originalSlideCID,label,phrase)
-                res.append([phrase, label, originalSlideCID])
+                for label in labels:
+                    res.append([phrase, label, originalSlideCID])
+#                 if len(labels) > 3:
+#                     print(labels, phrase)
+#                     raise
                 lineID += 1
         return res
     
