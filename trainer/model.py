@@ -116,6 +116,27 @@ class Text2Vec:
             labels.append(item[2])
         self.testset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
+        self.benchmark = pk.load(fileObject)
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
+        self.benchmarkMini = pk.load(fileObject)
+#         print(len(self.benchmark), self.benchmark[0])
+        fileObject.close()
+        
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in self.benchmark:
+            icon_idx.append(item[1])
+            phrase_embedding.append(item[0])
+            labels.append(1)
+        self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in self.benchmarkMini:
+            icon_idx.append(item[1])
+            phrase_embedding.append(item[0])
+            labels.append(1)
+        self.benchmarkDatasetMini = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]   
+        
         
     def initializeSession(self):
         self.session = tf.Session()
@@ -157,21 +178,20 @@ class Text2Vec:
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             if epoch % 10 == 0:
-                devres = self.cal_top_n(self.devset, "dev", N=2)
-                testres = self.cal_top_n(self.testset, "test", N=2)
-            
+                devres = self.cal_top_n(self.devset, "dev      ", N=2)
             # now only record the entry when it hits the maximum devset P@1
-            if devres and testres:
+            if devres:
                 if devres[1] > max_accuracy_top2[0][1]:
-                    max_accuracy_top2 = [devres, testres]
+                    testres = self.cal_top_n(self.testset, "test     ", N=2)
+                    benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2) 
+                    benchmarkminires = self.cal_top_n(self.benchmarkDatasetMini, "benchmini", N=2)
+                    max_accuracy_top2 = [devres, testres, benchmarkres, benchmarkminires]
             epoch += 1
             
         print("results when max dev accu:")
         print(max_accuracy_top2)
         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
         self.print_top_accuracy(max_accuracy_top2[1],"test") 
-        print("start testing benchmark")
-        self.test_on_benchmark()
         
         return max_accuracy_top2
     
@@ -254,20 +274,7 @@ class Text2Vec:
         tf.reset_default_graph()
 
     
-    def test_on_benchmark(self):
-        fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
-#       fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
-        self.benchmark = pk.load(fileObject)
-#         print(len(self.benchmark), self.benchmark[0])
-        fileObject.close()
+#     def test_on_benchmark(self):
         
-        icon_idx, phrase_embedding, labels = [], [], []
-        for item in self.benchmark:
-            icon_idx.append(item[1])
-            phrase_embedding.append(item[0])
-            labels.append(1)
-        self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
-        
-        benchmarkres = self.cal_top_n(self.benchmarkDataset, "benchmark", N=2) 
-        
+#         return benchmarkres
         
