@@ -36,11 +36,13 @@ class Text2Vec:
             model_params: Parameters for the model
             num_icons: Number of icons we will ultimately train
         """
-        self.initializeDataset(trainset, devset, testset)
-        self.__open_benchmark()
-        
         self.model_params = model_params
         self.num_cols = num_icons
+        
+        self.initializeDataset(trainset, devset, testset)
+        self.initializeDatasetWithBenchmarkTraining()
+        self.__open_benchmark()
+#         raise 
         
         # row - phrase input to the graph
         self.phrase_vec = tf.placeholder(tf.float32, shape=[None, model_params.in_dim], name='phrase_vec')
@@ -119,16 +121,23 @@ class Text2Vec:
         
     def initializeDatasetWithBenchmarkTraining(self):
         """initialize benchmark """ 
-        pass
         fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.glove.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         fileObject.close()
+        # parse the positive
         icon_idx, phrase_embedding, labels = [], [], []
         ph_idx = []
         for item in benchmarktrainraw:
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
             labels.append(1)
+        # generate negative
+        half = len(labels)
+        for i in range(half):
+            icon_idx.append((icon_idx[i]+666)%self.num_cols)
+            phrase_embedding.append(phrase_embedding[i])
+            labels.append(0)
+        # combine
         self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         
         
@@ -197,16 +206,20 @@ class Text2Vec:
 
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             if epoch % 10 == 0:
+                epoch += 1
                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
-            # now only record the entry when it hits the maximum devset P@1
-            if devres:
-                if devres[1] > max_accuracy_top2[0][1] and devres[1] > 0.4:
-                    testres = self.cal_top_n(self.testset, "test     ", N=2)
+                if not devres:
+                    continue
+                if devres[1] < max_accuracy_top2[0][1]:
+                    continue
+                testres = self.cal_top_n(self.testset, "test     ", N=2)
+                max_accuracy_top2 = [devres, testres]
+                if devres[1] > 0.17:
                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2) 
-                    benchmarkminires = self.cal_top_n(self.benchmarkDatasetMini, "benchmini", N=2)
-                    max_accuracy_top2 = [devres, testres, benchmarkres, benchmarkminires]
+#                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMini, "benchmini", N=2)
+                    max_accuracy_top2 = [devres, testres, benchmarkres]#, benchmarkminires]
             epoch += 1
-            
+
         print("results when max dev accu:")
         print(max_accuracy_top2)
         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
