@@ -170,6 +170,9 @@ class Text2Vec:
         print(max_accuracy_top2)
         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
         self.print_top_accuracy(max_accuracy_top2[1],"test") 
+        print("start testing benchmark")
+        self.test_on_benchmark()
+        
         return max_accuracy_top2
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
@@ -249,3 +252,22 @@ class Text2Vec:
         self.session.close()
         ops.reset_default_graph()
         tf.reset_default_graph()
+
+    
+    def test_on_benchmark(self):
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
+#       fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
+        self.benchmark = pk.load(fileObject)
+#         print(len(self.benchmark), self.benchmark[0])
+        fileObject.close()
+        
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in self.benchmark:
+            icon_idx.append(item[1])
+            phrase_embedding.append(item[0])
+            labels.append(1)
+        self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        benchmarkres = self.cal_top_n(self.benchmarkDataset, "benchmark", N=2) 
+        
+        
