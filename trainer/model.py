@@ -37,6 +37,7 @@ class Text2Vec:
             num_icons: Number of icons we will ultimately train
         """
         self.initializeDataset(trainset, devset, testset)
+        self.__open_benchmark()
         
         self.model_params = model_params
         self.num_cols = num_icons
@@ -116,6 +117,22 @@ class Text2Vec:
             labels.append(item[2])
         self.testset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         
+    def initializeDatasetWithBenchmarkTraining(self):
+        """initialize benchmark """ 
+        pass
+        fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.glove.p", 'rb')
+        benchmarktrainraw = pk.load(fileObject)
+        fileObject.close()
+        icon_idx, phrase_embedding, labels = [], [], []
+        ph_idx = []
+        for item in benchmarktrainraw:
+            icon_idx.append(item[1])
+            phrase_embedding.append(item[0])
+            labels.append(1)
+        self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+        
+        
+    def __open_benchmark(self):
         fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
         self.benchmark = pk.load(fileObject)
         fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
@@ -183,7 +200,7 @@ class Text2Vec:
                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
             # now only record the entry when it hits the maximum devset P@1
             if devres:
-                if devres[1] > max_accuracy_top2[0][1]:
+                if devres[1] > max_accuracy_top2[0][1] and devres[1] > 0.4:
                     testres = self.cal_top_n(self.testset, "test     ", N=2)
                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2) 
                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMini, "benchmini", N=2)
