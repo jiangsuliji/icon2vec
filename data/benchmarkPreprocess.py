@@ -10,18 +10,28 @@ from pretrained_embeddings import GloVe
 __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
 
+# top level params to control the script
+params = {
+#     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
+    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+    "embedding_method": "word2vec"
+#     "embedding_method": "glove"
+#     "embedding_method": "fasttext"
+}
+
+
+
 class benchmarkPreprocessor:
     """class that generates phrase embedding and labels"""
-    def __init__(self, setname, embedding_method):    
-        self.setname = setname
-        self.embedding_method = embedding_method
+    def __init__(self):    
+        self.embedding_method = params["embedding_method"]
         
-        if "word2vec"in embedding_method:
+        if "word2vec" == self.embedding_method:
             self.model = Word2Vec()
-#         elif "fasttext" in embedding_method:
-#             self.model = FastText('fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
-#         elif "glove" in embedding_method:
-#             self.model = GloVe('glove/glove.42B.300d.txt.bin', loadbinary=True)
+        elif "fasttext" == self.embedding_method:
+            self.model = FastText('fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
+        elif "glove" == self.embedding_method:
+            self.model = GloVe('glove/glove.42B.300d.txt.bin', loadbinary=True)
             
         self.__init__icon2idx()
         self.loadCSV()
@@ -59,14 +69,13 @@ class benchmarkPreprocessor:
         """main entry to load csv"""
         self.benchmark = self.__loadErikOveson_11_05_testset()        
         self.__process_method_0()
-        print(self.benchmark[1:5])
+#         print(self.benchmark[1:5])
     
     def __loadErikOveson_11_05_testset(self):
         """load """
         # smaller. close to organic
-        filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv" 
+        filepath = "benchmarks/ErikOveson_11_05/" + params["datasetName"]
         # larger. with designer feedback
-#         filepath = "benchmarks/ErikOveson_11_05/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv" 
         res = []
         with open(filepath, 'r', encoding="utf8") as f:
             lineID = 0
@@ -99,71 +108,24 @@ class benchmarkPreprocessor:
         
     
     def outPut(self):
-        fileObject = open("benchmarks/"+self.setname+"."+self.embedding_method[0]+".p", "wb")
+        fileObject = open("benchmarks/"+params["datasetName"]+"."+self.embedding_method+".p", "wb")
         pk.dump(self.mydataset, fileObject)
         fileObject.close()
 
     
     def proprocess(self):
-        mp_keywords2icon = {}
-        # pass 1: parse the input dataset
-        with open("training/"+self.setname+".txt", "r") as f:
-            lines = f.readlines()
-            for line in lines:
-                items = line.rstrip().split()
-                icon = items[0]
-                keywords = items[1:-1]
-                label = items[-1]
-                if label == "1":
-                    label = "True"
-                else:
-                    label = "False"
-                    continue
-                keywords = ' '.join(keywords)
-#                 print(icon, keywords, label)
-                if keywords not in mp_keywords2icon:
-                    mp_keywords2icon[keywords] = set()
-                    mp_keywords2icon[keywords].add(icon)
-                elif self.setname == "train":
-                    mp_keywords2icon[keywords].add(icon) 
-                else:
-                    # for test and dev, there should be no repeat
-                    raise
-#         print(mp_keywords2icon)
+        """ generate icon and phrase embedding: embedding, iconidx, iconName, Phrase """
         self.mydataset = []
-        # pass 2: generate icon and phrase embedding
-        for keywords, icons in mp_keywords2icon.items():
-#             print(keywords, icons)
-            label = self.genLabel(icons)
-            phrase_embedding = self.model[keywords.split()]
-            # entries for multiclass dataset
-            self.mydataset.append([np.array(phrase_embedding), np.array(label), keywords, icons])
+        for idx, item in enumerate(self.benchmark):
+            phrase, labelidx = item[0], item[1]
+            phrase_embedding = self.model[phrase]
+            self.mydataset.append([np.array(phrase_embedding),labelidx, item[2], ' '.join(phrase)])
+#             if idx == 3:
+#                 break
 #         print(self.mydataset)
         self.outPut()
-        print("processed ",self.embedding_method, self.setname, "with", len(self.mydataset), "entries")
-
-        
-
-# process here
-# M = benchmarkPreprocessor("train", ["word2vec"])
-# M.proprocess()
-# M = benchmarkPreprocessor("dev", ["word2vec"])
-# M.proprocess()
-M = benchmarkPreprocessor("test", ["word2vec"])
-# M.proprocess()
+        print("processed ",self.embedding_method, "with", len(self.mydataset), "entries")
 
 
-# M = benchmarkPreprocessor("train", ["fasttext"])
-# M.proprocess()
-# M = benchmarkPreprocessor("dev", ["fasttext"])
-# M.proprocess()
-# M = benchmarkPreprocessor("test", ["fasttext"])
-# M.proprocess()
-
-
-# M = benchmarkPreprocessor("train", ["glove"])
-# M.proprocess()
-# M = benchmarkPreprocessor("dev", ["glove"])
-# M.proprocess()
-# M = benchmarkPreprocessor("test", ["glove"])
-# M.proprocess()
+M = benchmarkPreprocessor()
+M.proprocess()
