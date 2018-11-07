@@ -12,10 +12,10 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-#     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
-    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
-    "embedding_method": "word2vec"
-#     "embedding_method": "glove"
+    "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
+#     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+#     "embedding_method": "word2vec"
+    "embedding_method": "glove"
 #     "embedding_method": "fasttext"
 }
 
@@ -33,6 +33,7 @@ class benchmarkPreprocessor:
         elif "glove" == self.embedding_method:
             self.model = GloVe('glove/glove.42B.300d.txt.bin', loadbinary=True)
             
+        self.loadStopList()
         self.__init__icon2idx()
         self.loadCSV()
         
@@ -45,7 +46,14 @@ class benchmarkPreprocessor:
         self.iconNum = len(self.mp_icon2idx)
 #         print(self.iconNum)
         fileObject.close()
-    
+   
+    def loadStopList(self):
+        self.stoplist = set()
+        with open("stoplists/stoplist2") as f:
+            for line in f:
+                self.stoplist.add(line[:-1])
+#         print(self.stoplist)
+
     def __genLabelIdx(self, label):
         if label+".svg" in self.mp_icon2idx:
             return self.mp_icon2idx[label+".svg"]
@@ -69,7 +77,7 @@ class benchmarkPreprocessor:
         """main entry to load csv"""
         self.benchmark = self.__loadErikOveson_11_05_testset()        
         self.__process_method_0()
-#         print(self.benchmark[1:5])
+        print(self.benchmark[10])
     
     def __loadErikOveson_11_05_testset(self):
         """load """
@@ -100,11 +108,14 @@ class benchmarkPreprocessor:
         for idx, item in enumerate(self.benchmark):
             phrase, label, originalSlideCID = item[0], item[1], item[2]
             items = phrase.split()
-            cleaned_items = []
+            cleaned_items = set()
             for i in items:
-                if re.match("^[A-Za-z0-9_-]*$", i):
-                    cleaned_items.append(i)
-            self.benchmark[idx] = [cleaned_items, self.__genLabelIdx(label), label, originalSlideCID]
+                if i in self.stoplist or len(i) <= 1:
+                    continue
+                if re.match("^[a-z_-]*$", i):
+#                 if re.match("^[A-Za-z0-9_-]*$", i):
+                    cleaned_items.add(i)
+            self.benchmark[idx] = [list(cleaned_items), self.__genLabelIdx(label), label, originalSlideCID]
         
     
     def outPut(self):
@@ -122,7 +133,7 @@ class benchmarkPreprocessor:
             self.mydataset.append([np.array(phrase_embedding),labelidx, item[2], ' '.join(phrase)])
 #             if idx == 3:
 #                 break
-#         print(self.mydataset)
+#         prist(self.mydataset)
         self.outPut()
         print("processed ",self.embedding_method, "with", len(self.mydataset), "entries")
 

@@ -273,8 +273,4 @@ class Text2Vec:
         ops.reset_default_graph()
         tf.reset_default_graph()
 
-    
-#     def test_on_benchmark(self):
-        
-#         return benchmarkres
         
