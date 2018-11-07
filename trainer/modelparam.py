@@ -44,6 +44,11 @@ class ModelParams:
         self.max_epochs = max_epochs
         self.in_dim = in_dim
         self.nn_params = nn_params
+        # load icon idx map first
+        fileObject = open("data/iconIndex2NameMap.p", 'rb')
+        self.mp_idx2name = pk.load(fileObject)
+#         print(self.mp_icon2idx)
+        fileObject.close()
 
     # TODO jili5: update this later
     def model_folder(self, dataset_name):

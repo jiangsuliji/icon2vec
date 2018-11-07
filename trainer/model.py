@@ -123,12 +123,14 @@ class Text2Vec:
 #         print(len(self.benchmark), self.benchmark[0])
         fileObject.close()
         
-        icon_idx, phrase_embedding, labels = [], [], []
+        icon_idx, phrase_embedding, labels, icon, phrase = [], [], [], [], []
         for item in self.benchmark:
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
             labels.append(1)
-        self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
+            icon.append(item[2])
+            phrase.append(item[3])
+        self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(icon), np.array(phrase)]
         
         icon_idx, phrase_embedding, labels = [], [], []
         for item in self.benchmarkMini:
@@ -208,6 +210,12 @@ class Text2Vec:
             })
 
             results.append(sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N])
+        if str == "bench   ":
+            for i in range(10):
+                print("phrase:", dataset[4][i])
+                print("correct icon:",self.model_params.mp_idx2name[dataset[0][i]], \
+                      "suggested icons(Top2)", self.model_params.mp_idx2name[results[i][0]],self.model_params.mp_idx2name[ results[i][1]])
+                print("\n")
         return self.cal_metrics(results, dataset[2], dataset[0], str, N=N)
         
         
@@ -219,6 +227,7 @@ class Text2Vec:
 #         print(results)
 #         print(labels)
 #         print(icons)
+
         if len(results) != len(labels) or len(results) != len(icons):
             print("error: len of inputs not equal")
             raise
