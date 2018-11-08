@@ -12,9 +12,9 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-#     "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
+    "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
-    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+#     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
 #     "embedding_method": "word2vec"
     "embedding_method": "glove"
 #     "embedding_method": "fasttext"
@@ -94,7 +94,7 @@ class benchmarkPreprocessor:
         """load """
         # smaller. close to organic
         filepath = "benchmarks/ErikOveson_11_05/" + params["datasetName"]
-        # larger. with designer feedback
+        # larger. with designertopfeedback
         res = []
         with open(filepath, 'r', encoding="utf8") as f:
             lineID = 0
@@ -130,14 +130,16 @@ class benchmarkPreprocessor:
         for idx, item in enumerate(self.benchmark):
             phrase, label, originalSlideCID = item[0], item[1], item[2]
             items = phrase.split()
-            cleaned_items = set()
+            cleaned_items = [] 
+#             cleaned_items = set()
             for i in items:
-                if i in self.stoplist or len(i) <= 1:
+                if i in self.stoplist:# or len(i) <= 1:
                     continue
-                if re.match("^[a-z_-]*$", i):
+#                 if re.match("^[a-z_-]*$", i):
 #                 if re.match("^[A-Za-z0-9_-]*$", i):
-                    cleaned_items.add(i)
-            self.benchmark[idx] = [list(cleaned_items), self.__genLabelIdx(label), label, originalSlideCID]
+#                 cleaned_items.add(i)
+                cleaned_items.append(i)
+            self.benchmark[idx] = [cleaned_items, self.__genLabelIdx(label), label, originalSlideCID]
         
     
     def outPut(self):
