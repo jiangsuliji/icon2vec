@@ -10,6 +10,7 @@ Based on Ben Eisner, Tim Rocktaschel's good work.
 import tensorflow as tf
 from tensorflow.python.framework import ops
 import numpy as np
+import sys
 from os import environ
 from random import shuffle
 import sklearn.metrics as metrics
@@ -134,7 +135,7 @@ class Text2Vec:
         # generate negative
         half = len(labels)
         for i in range(half):
-            icon_idx.append((icon_idx[i]+666)%self.num_cols)
+            icon_idx.append((icon_idx[i]+np.random.randint(0,1000))%self.num_cols)
             phrase_embedding.append(phrase_embedding[i])
             labels.append(0)
         # combine
@@ -145,7 +146,7 @@ class Text2Vec:
         fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
         self.benchmark = pk.load(fileObject)
         fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
-        self.benchmarkMini = pk.load(fileObject)
+        self.benchmarkMin = pk.load(fileObject)
 #         print(len(self.benchmark), self.benchmark[0])
         fileObject.close()
         
@@ -159,11 +160,11 @@ class Text2Vec:
         self.benchmarkDataset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(icon), np.array(phrase)]
         
         icon_idx, phrase_embedding, labels = [], [], []
-        for item in self.benchmarkMini:
+        for item in self.benchmarkMin:
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
             labels.append(1)
-        self.benchmarkDatasetMini = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]   
+        self.benchmarkDatasetMin = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]   
         
         
     def initializeSession(self):
@@ -207,17 +208,19 @@ class Text2Vec:
             print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             if epoch % 10 == 0:
                 epoch += 1
-                devres = self.cal_top_n(self.devset, "dev      ", N=2)
+#                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
+                devres = self.cal_top_n(self.benchmarkDatasetMin, "dev1000 ", N=2,stop=1000)
                 if not devres:
                     continue
                 if devres[1] < max_accuracy_top2[0][1]:
                     continue
-                testres = self.cal_top_n(self.testset, "test     ", N=2)
+                testres = self.cal_top_n(self.benchmarkDatasetMin, "test5000  ", N=2, stop=5000)
+#                 testres = self.cal_top_n(self.testset, "test     ", N=2)
                 max_accuracy_top2 = [devres, testres]
-                if devres[1] > 0.17:
-                    benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2) 
-#                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMini, "benchmini", N=2)
-                    max_accuracy_top2 = [devres, testres, benchmarkres]#, benchmarkminires]
+#                 if devres[1] > 0.15:
+#                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 
+#                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMin, "benchmin", N=2)
+#                     max_accuracy_top2 = [devres, testres, benchmarkres]#, benchmarkminres]
             epoch += 1
 
         print("results when max dev accu:")
@@ -228,10 +231,15 @@ class Text2Vec:
         return max_accuracy_top2
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
-    def cal_top_n(self, dataset, str, N=2):
+    def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
+        # quick assessment for early termination:
+        if len(dataset) > 20000:
+            res = self.cal_top_n(dataset, str+"fast", N=2, stop = stop)
+            return res
+        
         results = [] # for phrase - top N icons
         indices_arr = range(0, self.num_cols)
-        for ph_idx in range(len(dataset[1])):
+        for ph_idx in range(min(stop, len(dataset[1]))):
 #             print(dataset[1][ph_idx])
 #             print(np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1)).shape)
             res = self.session.run(self.prob, feed_dict={
@@ -258,9 +266,9 @@ class Text2Vec:
 #         print(labels)
 #         print(icons)
 
-        if len(results) != len(labels) or len(results) != len(icons):
-            print("error: len of inputs not equal")
-            raise
+#         if len(results) != len(labels) or len(results) != len(icons):
+#             print("error: len of inputs not equal")
+#             raise
         P, T, F = [-404]*N, [0]*N, [0]*N
         for i in range(len(results)):
             if labels[i] == 1.0:
