@@ -14,7 +14,7 @@ __email__ = "jili5@microsoft.com"
 # searcher logic 
 config = {
     "nn_params": [[300]],
-    "max_epochs": [10000], 
+    "max_epochs": [1], 
     "learning_rate": [0.0001], 
     "batch_size": [1000], 
     "dropout": [0.0],

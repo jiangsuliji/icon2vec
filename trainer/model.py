@@ -183,7 +183,7 @@ class Text2Vec:
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
-        max_accuracy_top2 = [[0,0],[0,0]] 
+        max_res = {"min1000":[0,0], "min5000":[0,0], "minWordAll":[0,0], "notMinAll":[0,0]} 
         while epoch < self.model_params.max_epochs:   
 #             print(total_data_entry, half_data_entry)
             training_idx_pos = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
@@ -205,18 +205,26 @@ class Text2Vec:
             })
             current_loss = sum(current_loss)
 
-            print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
             if epoch % 10 == 0:
+                print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
                 epoch += 1
 #                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
-                devres = self.cal_top_n(self.benchmarkDatasetMin, "dev1000 ", N=2,stop=1000)
+                devres = self.cal_top_n(self.benchmarkDatasetMin, "devMin1000 ", N=2,stop=1000)
                 if not devres:
                     continue
-                if devres[1] < max_accuracy_top2[0][1]:
+                if devres[1] < max_res["min1000"][1]:
                     continue
-                testres = self.cal_top_n(self.benchmarkDatasetMin, "test5000  ", N=2, stop=5000)
-#                 testres = self.cal_top_n(self.testset, "test     ", N=2)
-                max_accuracy_top2 = [devres, testres]
+                if devres[1] > 0.21:
+                    testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
+                    max_res["min1000"] = devres
+                    max_res["min5000"] = testres
+                    if testres[1] > max_res["min5000"][1]:
+                        testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
+                        testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
+                        if testminallres[1] > max_res["minWordAll"][1]:
+                            max_res["minWordAll"] = testminallres
+                            max_res["notMinAll"] = testallres
+                    
 #                 if devres[1] > 0.15:
 #                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 
 #                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMin, "benchmin", N=2)
@@ -224,11 +232,11 @@ class Text2Vec:
             epoch += 1
 
         print("results when max dev accu:")
-        print(max_accuracy_top2)
-        self.print_top_accuracy(max_accuracy_top2[0],"dev") 
-        self.print_top_accuracy(max_accuracy_top2[1],"test") 
+        print(max_res)
+#         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
+#         self.print_top_accuracy(max_accuracy_top2[1],"test") 
         
-        return max_accuracy_top2
+        return max_res 
     
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
@@ -283,16 +291,10 @@ class Text2Vec:
         self.print_top_accuracy_TP(P, T, F, str)
         return P
     
-    # train set evaluation
-    # TODO: update
-    def test_on_train(self):
-        res = self.session.run(self.prob, feed_dict={
-                self.col:self.trainset[0],
-                self.phrase_vec: self.trainset[1]
-        })
-        y_pred = [1 if y > self.model_params.class_threshold else 0 for y in res]
-        return y_pred, self.trainset[2]
-       
+    def train2seq(self):
+        pass
+    
+    
     
     def print_top_accuracy_TP(self, P, T, F, st):
         if len(P) != len(T) or len(T) != len(F):
@@ -300,7 +302,7 @@ class Text2Vec:
         s = "\t"+st + "\t"
         for i in range(len(P)):
             s += "P" +str(i+1)+"="
-            s += "%3.2f," %(P[i])
+            s += "%3.3f," %(P[i])
         s = s[:-1] + "; "
         for i in range(len(T)):
             s += "T"+str(i+1)+"="+str(T[i]) + ",F" + str(i+1)+"="+str(F[i])+","
@@ -311,7 +313,7 @@ class Text2Vec:
         s = "\t"+st+"\t"
         for i in range(len(P)):
             s+= "P" +str(i+1)+"="
-            s+= "%3.2f," %(P[i])
+            s+= "%3.3f," %(P[i])
         s = s[:-1]
         print(s)
         
