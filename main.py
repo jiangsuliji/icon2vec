@@ -14,9 +14,9 @@ __email__ = "jili5@microsoft.com"
 # searcher logic 
 config = {
     "nn_params": [[300]],
-    "max_epochs": [1], 
-    "learning_rate": [0.0001], 
-    "batch_size": [1000], 
+    "max_epochs": [1000], 
+    "learning_rate": [0.001], 
+    "batch_size": [1024], 
     "dropout": [0.0],
     "verbose": [True],
 #     "embedding": ["word2vec"]

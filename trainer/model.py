@@ -41,9 +41,8 @@ class Text2Vec:
         self.num_cols = num_icons
         
         self.initializeDataset(trainset, devset, testset)
-        self.initializeDatasetWithBenchmarkTraining()
+#         self.initializeDatasetWithBenchmarkTraining()
         self.__open_benchmark()
-#         raise 
         
         # row - phrase input to the graph
         self.phrase_vec = tf.placeholder(tf.float32, shape=[None, model_params.in_dim], name='phrase_vec')
@@ -172,14 +171,72 @@ class Text2Vec:
         init = tf.global_variables_initializer()
         self.session.run(init)
     
+    # train the model using the appropriate parameters
+    def train1(self):
+        """Train the model on a given knowledge base"""
+        self.optimizer1 = tf.train.AdamOptimizer(self.model_params.learning_rate)
+        self.minimization_op1 = self.optimizer1.minimize(self.loss)
+        
+        self.optimizer = tf.train.AdamOptimizer(0.0001)
+        self.minimization_op = self.optimizer.minimize(self.loss)
+        self.initializeSession()
+        epoch = 0
+        total_data_entry = self.trainset[0].shape[0]
+        half_data_entry = self.trainset[0].shape[0]//2
+        max_res = {"dev":[0,0], "test":[0,0]} 
+        while epoch < self.model_params.max_epochs:   
+#             print(total_data_entry, half_data_entry)
+            training_idx_pos = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
+            training_idx_neg = np.random.randint(half_data_entry, size=self.model_params.batch_size//2)
+            training_idx_neg = [i+ half_data_entry for i in training_idx_neg]
+            training_idx = np.concatenate((training_idx_pos, training_idx_neg),axis =0)
+            shuffle(training_idx)
+#             y = [1 if i < half_data_entry else 0 for i in training_idx]
+            y = [self.trainset[2][i] for i in training_idx]
+            
+#             print(training_idx_neg, training_idx_pos)
+#             print("===",training_idx)
+#             print(y)
+        
+            _, current_loss = self.session.run([self.minimization_op1, self.loss], feed_dict={
+                self.col:self.trainset[0][training_idx],
+                self.phrase_vec: self.trainset[1][training_idx],
+                self.y:np.array(y)
+            })
+            current_loss = sum(current_loss)
+
+            if epoch % 10 == 0:
+                print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
+                devres = self.cal_top_n(self.devset, "dev ", N=2)
+                if not devres:
+                    epoch += 1
+                    continue
+                if devres[1] <= max_res["dev"][1]:
+                    epoch += 1
+                    continue
+                testres = self.cal_top_n(self.testset, "test", N=2)
+                max_res["dev"] = devres
+                max_res["test"] = testres
+                if devres[1] >= 0.4:# and testres[1] >=0.4:
+                    print(max_res)
+                    return
+                    
+            epoch += 1
+
+        print("results when max dev accu:")
+        print(max_res)
+#         self.print_top_accuracy(max_accuracy_top2[0],"dev") 
+#         self.print_top_accuracy(max_accuracy_top2[1],"test") 
+        
+        return max_res 
     
     # train the model using the appropriate parameters
     def train(self):
         """Train the model on a given knowledge base"""
-        self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
-        minimization_op = self.optimizer.minimize(self.loss)
+#         self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
+#         minimization_op = self.optimizer.minimize(self.loss)
         
-        self.initializeSession()
+#         self.initializeSession()
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
@@ -198,7 +255,7 @@ class Text2Vec:
 #             print("===",training_idx)
 #             print(y)
         
-            _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
+            _, current_loss = self.session.run([self.minimization_op, self.loss], feed_dict={
                 self.col:self.trainset[0][training_idx],
                 self.phrase_vec: self.trainset[1][training_idx],
                 self.y:np.array(y)
@@ -220,10 +277,11 @@ class Text2Vec:
                     max_res["min5000"] = testres
                     if testres[1] > max_res["min5000"][1]:
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
-                        testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
                         if testminallres[1] > max_res["minWordAll"][1]:
-                            max_res["minWordAll"] = testminallres
-                            max_res["notMinAll"] = testallres
+                            testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
+                            if testminallres[1] > max_res["minWordAll"][1]:
+                                max_res["minWordAll"] = testminallres
+                                max_res["notMinAll"] = testallres
                     
 #                 if devres[1] > 0.15:
 #                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 
@@ -291,8 +349,19 @@ class Text2Vec:
         self.print_top_accuracy_TP(P, T, F, str)
         return P
     
-    def train2seq(self):
-        pass
+    def trainSeq(self):
+        """train with keywords pair dataset,then move to the next"""
+        print(len(self.trainset[0]))
+        self.train1()
+        
+        self.model_params.learning_rate = 0.0003
+        self.model_params.batch_size = 4000
+        self.model_params.max_epochs = 100000
+        self.initializeDatasetWithBenchmarkTraining()
+        print(len(self.trainset[0]))
+        print("\n\nstart training using Eriks trainset\n\n")
+        self.train()
+        raise
     
     
     
