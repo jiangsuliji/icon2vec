@@ -86,8 +86,8 @@ class Searcher:
     
     def run_one_setting(self, s):
         trainer = self.create_trainer(s)
-#         rtn = trainer.train()
-        rtn = trainer.trainSeq()
+        rtn = trainer.train()
+#         rtn = trainer.trainSeq()
         trainer.close()
         del trainer
         return rtn

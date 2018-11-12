@@ -41,7 +41,7 @@ class Text2Vec:
         self.num_cols = num_icons
         
         self.initializeDataset(trainset, devset, testset)
-#         self.initializeDatasetWithBenchmarkTraining()
+        self.initializeDatasetWithBenchmarkTraining()
         self.__open_benchmark()
         
         # row - phrase input to the graph
@@ -233,10 +233,10 @@ class Text2Vec:
     # train the model using the appropriate parameters
     def train(self):
         """Train the model on a given knowledge base"""
-#         self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
-#         minimization_op = self.optimizer.minimize(self.loss)
+        self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
+        self.minimization_op = self.optimizer.minimize(self.loss)
         
-#         self.initializeSession()
+        self.initializeSession()
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
@@ -262,7 +262,7 @@ class Text2Vec:
             })
             current_loss = sum(current_loss)
 
-            if epoch % 10 == 0:
+            if epoch % 100 == 0:
                 print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
                 epoch += 1
 #                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
@@ -271,18 +271,18 @@ class Text2Vec:
                     continue
                 if devres[1] < max_res["min1000"][1]:
                     continue
-                if devres[1] > 0.21:
-                    testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
+                if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
                     max_res["min1000"] = devres
-                    max_res["min5000"] = testres
+                    testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
                     if testres[1] > max_res["min5000"][1]:
+                        max_res["min5000"] = testres
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
                         if testminallres[1] > max_res["minWordAll"][1]:
                             testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
                             if testminallres[1] > max_res["minWordAll"][1]:
                                 max_res["minWordAll"] = testminallres
                                 max_res["notMinAll"] = testallres
-                    
+
 #                 if devres[1] > 0.15:
 #                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 
 #                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMin, "benchmin", N=2)
