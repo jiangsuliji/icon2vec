@@ -33,6 +33,7 @@ class Model_ML:
 	def processResponse(self, responseText):
 		"""given the text response, find the top N suggested icons"""
 		# sample return: [['Man.svg', 0.05994971841573715], ['MaleProfile.svg', 0.0498545840382576]]
+		
 		r = json.loads(responseText)['presentationAnalyses']['slideAnalyses'][0]['text2IconOutput']['iconInfos']['m_iconInfoList']
 		# print(r)
 		if len(r) != self.N:
