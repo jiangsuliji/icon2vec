@@ -33,7 +33,7 @@ class Model_MSRA:
 	def processResponse(self):
 		"""given the text response, find the top N suggested icons"""
 		# sample return: [['Man.svg', 0.05994971841573715], ['MaleProfile.svg', 0.0498545840382576]]
-		inf = open('tmp.txt', 'r')
+		inf = open('tmp.txt', 'r', encoding="utf-8")
 		TMPresults = [[0, 0] for i in range(self.N+1)]
 		for idx, line in enumerate(inf):
 			# print("working on:", idx, line)
@@ -66,7 +66,7 @@ class Model_MSRA:
 		
 		
 	def dumpHTML2Txt(self, responseText):
-		inf = open('tmp.txt', 'w')
+		inf = open('tmp.txt', 'w', encoding="utf-8")
 		inf.write(responseText)
 		inf.close()
 		
