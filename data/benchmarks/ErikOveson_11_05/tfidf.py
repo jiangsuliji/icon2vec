@@ -11,7 +11,7 @@ class TF_IDF:
     """class to generate a dict of words that should be removed"""
     def __init__(self):
         self.__load_csv()
-        self.end = -1
+        self.end = None 
         self.threshold = 0.01
     
     
@@ -69,23 +69,26 @@ class TF_IDF:
         
     def filterMain(self):
         """filter out low TFIDF words"""
-        self.testset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_testset, self.testset[:self.end])
         self.trainset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_trainset, self.trainset[:self.end])
         self.minwordset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_minwordset, self.minwordset[:self.end])
+        self.testset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_testset, self.testset[:self.end])
 
         
     def _filterLowTFIDFWords(self, TFIDFdict, dataset):
 #         print(TFIDFdict[:10])
+        filteredCNT = 0
         for idx, document in enumerate(dataset):
             newdocument = []
             for word in document:
                 if TFIDFdict[idx][word] >= self.threshold:
                     newdocument.append(word)
-#                 else:
+                else:
+                    filteredCNT += 1
 #                     print("removed:", word)
             dataset[idx] = newdocument
 #             print(document)
 #             print("=>", newdocument)
+        print("filtered", filteredCNT, "words")
         return dataset
         
     def dumpOut(self):
