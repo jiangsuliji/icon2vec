@@ -217,9 +217,9 @@ class Text2Vec:
                 testres = self.cal_top_n(self.testset, "test", N=2)
                 max_res["dev"] = devres
                 max_res["test"] = testres
-                if devres[1] >= 0.4:# and testres[1] >=0.4:
-                    print(max_res)
-                    return
+#                 if devres[1] >= 0.4:# and testres[1] >=0.4:
+#                     print(max_res)
+#                     return
                     
             epoch += 1
 
