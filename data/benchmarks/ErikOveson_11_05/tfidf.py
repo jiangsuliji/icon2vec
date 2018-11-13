@@ -1,5 +1,6 @@
 """TF-IDF model to process Erik's benchmarks"""
 
+import math
 
 # Authorship
 __author__ = "Ji Li"
@@ -10,6 +11,8 @@ class TF_IDF:
     """class to generate a dict of words that should be removed"""
     def __init__(self):
         self.__load_csv()
+        self.end = -1
+        self.threshold = 0.01
     
     
     def __load_csv(self):
@@ -54,23 +57,41 @@ class TF_IDF:
     
     def computeTFIDF(self):
         # TODO: remove the end exp
-        end = 10
-        self.IDFdict_testset = self.computeIDF(self.testset[:end])
-#         print(IDFdict)
-        self.TFIDF_testset = self.computeTF(self.testset[:end], self.IDFdict_testset)
+        self.IDFdict_testset = self.computeIDF(self.testset[:self.end])
+        self.TFIDF_testset = self.computeTF(self.testset[:self.end], self.IDFdict_testset)
 #         print(self.TFIDF_testset)
         
-        self.IDFdict_trainset = self.computeIDF(self.trainset[:end])
-        self.TFIDF_trainset = self.computeTF(self.trainset[:end], self.IDFdict_trainset)
+        self.IDFdict_trainset = self.computeIDF(self.trainset[:self.end])
+        self.TFIDF_trainset = self.computeTF(self.trainset[:self.end], self.IDFdict_trainset)
         
-        self.IDFdict_minwordset = self.computeIDF(self.minwordset[:end])
-        self.TFIDF_minwordset = self.computeTF(self.minwordset[:end], self.IDFdict_minwordset)
+        self.IDFdict_minwordset = self.computeIDF(self.minwordset[:self.end])
+        self.TFIDF_minwordset = self.computeTF(self.minwordset[:self.end], self.IDFdict_minwordset)
         
+    def filterMain(self):
+        """filter out low TFIDF words"""
+        self.testset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_testset, self.testset[:self.end])
+        self.trainset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_trainset, self.trainset[:self.end])
+        self.minwordset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_minwordset, self.minwordset[:self.end])
+
+        
+    def _filterLowTFIDFWords(self, TFIDFdict, dataset):
+#         print(TFIDFdict[:10])
+        for idx, document in enumerate(dataset):
+            newdocument = []
+            for word in document:
+                if TFIDFdict[idx][word] >= self.threshold:
+                    newdocument.append(word)
+#                 else:
+#                     print("removed:", word)
+            dataset[idx] = newdocument
+#             print(document)
+#             print("=>", newdocument)
+        return dataset
         
     def dumpOut(self):
-        self._dumpOut(self.testset[:10], self.testsetPrefix, "testset")
-        self._dumpOut(self.minwordset[:10], self.minwordsetPrefix, "minwordset")
-        self._dumpOut(self.trainset[:10], self.trainsetPrefix, "trainset")
+        self._dumpOut(self.testset[:self.end], self.testsetPrefix, "testset")
+        self._dumpOut(self.minwordset[:self.end], self.minwordsetPrefix, "minwordset")
+        self._dumpOut(self.trainset[:self.end], self.trainsetPrefix, "trainset")
     
     def _dumpOut(self, res, resPrefix, fileName):
         with open("TFIDFprocessed/"+fileName, "w", encoding="utf8") as f:
@@ -98,7 +119,7 @@ class TF_IDF:
 #         print(IDFdict)
         N = len(res)# document length
         for word, wordcnt in IDFdict.items():
-            IDFdict[word] = wordcnt/N
+            IDFdict[word] = math.log10(N/wordcnt)
         return IDFdict
         
     
@@ -125,6 +146,7 @@ class TF_IDF:
     
 M = TF_IDF()
 M.computeTFIDF()
+M.filterMain()
 M.dumpOut()
 
 
