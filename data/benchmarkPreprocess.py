@@ -1,4 +1,4 @@
-"""Preprocess train/dev/test.txt - generate the corresponding set for Erik's benchmark"""
+"""generate the corresponding set for Erik's benchmark"""
 import numpy as np
 import pickle as pk
 import re
@@ -12,9 +12,16 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-    "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
+    "savedir": "benchmarks/ErikOveson_11_05/TFIDFprocessed/",
+#     "datasetName": "trainset",
+#     "datasetName": "testset",
+    "datasetName": "minwordset",
+    
+#     "savedir": "benchmarks/ErikOveson_11_05/",#for orignal dataset
+#     "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+    
 #     "embedding_method": "word2vec"
     "embedding_method": "glove"
 #     "embedding_method": "fasttext"
@@ -93,7 +100,7 @@ class benchmarkPreprocessor:
     def __loadErikOveson_11_05_testset(self):
         """load """
         # smaller. close to organic
-        filepath = "benchmarks/ErikOveson_11_05/" + params["datasetName"]
+        filepath = params["savedir"] + params["datasetName"]
         # larger. with designertopfeedback
         res = []
         with open(filepath, 'r', encoding="utf8") as f:
@@ -143,7 +150,7 @@ class benchmarkPreprocessor:
         
     
     def outPut(self):
-        fileObject = open("benchmarks/"+params["datasetName"]+"."+self.embedding_method+".p", "wb")
+        fileObject = open(params["savedir"]+params["datasetName"]+"."+self.embedding_method+".p", "wb")
         pk.dump(self.mydataset, fileObject)
         fileObject.close()
 

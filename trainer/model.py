@@ -274,14 +274,14 @@ class Text2Vec:
                 if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
                     max_res["min1000"] = devres
                     testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
-                    if testres[1] > max_res["min5000"][1]:
+                    if testres[1] > max_res["min5000"][1]+0.002:
                         max_res["min5000"] = testres
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
                         if testminallres[1] > max_res["minWordAll"][1]:
-                            testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
-                            if testminallres[1] > max_res["minWordAll"][1]:
-                                max_res["minWordAll"] = testminallres
-                                max_res["notMinAll"] = testallres
+#                             testallres = self.cal_top_n(self.benchmarkDataset, "testALL  ", N=2)
+#                             if testminallres[1] > max_res["minWordAll"][1]:
+                            max_res["minWordAll"] = testminallres
+#                                 max_res["notMinAll"] = testallres
 
 #                 if devres[1] > 0.15:
 #                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 

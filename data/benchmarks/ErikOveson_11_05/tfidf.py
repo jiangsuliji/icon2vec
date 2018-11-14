@@ -12,7 +12,7 @@ class TF_IDF:
     def __init__(self):
         self.__load_csv()
         self.end = None 
-        self.threshold = 0.01
+        self.threshold = 0.02
     
     
     def __load_csv(self):
