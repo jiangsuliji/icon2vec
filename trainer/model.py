@@ -465,18 +465,9 @@ class Text2VecMulti:
         self.loss = tf.reduce_mean(self.loss_towork)
         print(self.loss)
     
-    def add_all(self, x):
-        rtn = 0
-        for i in x:
-            for j in i:
-                rtn += j  
-        return rtn
-    
     
     def suppress(self, a):
-
         b = a.tolist()
-        print(self.add_all(b))
 #         print(len(a), len(a[0]))
         res = []
         for i in range(len(b)):
@@ -487,8 +478,6 @@ class Text2VecMulti:
                 if b[i][tryi] == 0:
                     j -= 1
                     b[i][tryi] = 1
-        print(self.add_all(b))
-        print("\n\n")
         return np.array(b)
     
     # train the model using the appropriate parameters
