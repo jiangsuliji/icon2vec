@@ -12,19 +12,19 @@ __email__ = "jili5@microsoft.com"
 
 # top level params to control the script
 params = {
-    "savedir": "benchmarks/ErikOveson_11_05/TFIDFprocessed/",
+#     "savedir": "benchmarks/ErikOveson_11_05/TFIDFprocessed/",
 #     "datasetName": "trainset",
 #     "datasetName": "testset",
-    "datasetName": "minwordset",
+#     "datasetName": "minwordset",
     
-#     "savedir": "benchmarks/ErikOveson_11_05/",#for orignal dataset
+    "savedir": "benchmarks/ErikOveson_11_05/",#for orignal dataset
 #     "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
-#     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
     
 #     "embedding_method": "word2vec"
-    "embedding_method": "glove"
-#     "embedding_method": "fasttext"
+#     "embedding_method": "glove"
+    "embedding_method": "fasttext"
 }
 
 

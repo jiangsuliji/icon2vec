@@ -121,7 +121,7 @@ class Text2Vec:
         
     def initializeDatasetWithBenchmarkTraining(self):
         """initialize benchmark """ 
-        fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.glove.p", 'rb')
+        fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         fileObject.close()
         # parse the positive
@@ -142,9 +142,9 @@ class Text2Vec:
         
         
     def __open_benchmark(self):
-        fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.glove.p", 'rb')
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv.fasttext.p", 'rb')
         self.benchmark = pk.load(fileObject)
-        fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.glove.p", 'rb')
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.p", 'rb')
         self.benchmarkMin = pk.load(fileObject)
 #         print(len(self.benchmark), self.benchmark[0])
         fileObject.close()
@@ -261,8 +261,12 @@ class Text2Vec:
                 self.y:np.array(y)
             })
             current_loss = sum(current_loss)
-
-            if epoch % 100 == 0:
+            if epoch < 30000: 
+                spe = 1000
+            else:
+                spe = 100
+            
+            if epoch % spe == 0:
                 print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
                 epoch += 1
 #                 devres = self.cal_top_n(self.devset, "dev      ", N=2)
@@ -274,7 +278,7 @@ class Text2Vec:
                 if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
                     max_res["min1000"] = devres
                     testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
-                    if testres[1] > max_res["min5000"][1]+0.002:
+                    if testres[1] > max_res["min5000"][1]:
                         max_res["min5000"] = testres
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
                         if testminallres[1] > max_res["minWordAll"][1]:

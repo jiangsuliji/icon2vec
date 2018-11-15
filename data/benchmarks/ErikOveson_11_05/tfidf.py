@@ -56,9 +56,8 @@ class TF_IDF:
     
     
     def computeTFIDF(self):
-        # TODO: remove the end exp
-        self.IDFdict_testset = self.computeIDF(self.testset[:self.end])
-        self.TFIDF_testset = self.computeTF(self.testset[:self.end], self.IDFdict_testset)
+#         self.IDFdict_testset = self.computeIDF(self.testset[:self.end])
+#         self.TFIDF_testset = self.computeTF(self.testset[:self.end], self.IDFdict_testset)
 #         print(self.TFIDF_testset)
         
         self.IDFdict_trainset = self.computeIDF(self.trainset[:self.end])
@@ -71,7 +70,7 @@ class TF_IDF:
         """filter out low TFIDF words"""
         self.trainset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_trainset, self.trainset[:self.end])
         self.minwordset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_minwordset, self.minwordset[:self.end])
-        self.testset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_testset, self.testset[:self.end])
+#         self.testset[:self.end] = self._filterLowTFIDFWords(self.TFIDF_testset, self.testset[:self.end])
 
         
     def _filterLowTFIDFWords(self, TFIDFdict, dataset):
@@ -92,9 +91,9 @@ class TF_IDF:
         return dataset
         
     def dumpOut(self):
-        self._dumpOut(self.testset[:self.end], self.testsetPrefix, "testset")
-        self._dumpOut(self.minwordset[:self.end], self.minwordsetPrefix, "minwordset")
-        self._dumpOut(self.trainset[:self.end], self.trainsetPrefix, "trainset")
+#         self._dumpOut(self.testset[:self.end], self.testsetPrefix, "testset")
+        self._dumpOut(self.minwordset[:self.end], self.minwordsetPrefix, "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv")
+        self._dumpOut(self.trainset[:self.end], self.trainsetPrefix, "trainset_12-2017_9-1-2018_025Unk.ss.csv")
     
     def _dumpOut(self, res, resPrefix, fileName):
         with open("TFIDFprocessed/"+fileName, "w", encoding="utf8") as f:
