@@ -1,11 +1,15 @@
 # Emoji2vec model
 import pickle as pk
 import numpy as np
-import sys
+import sys, math
 
 # Authorship
 __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
+
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x))
+
 
 class Model_icon2vec:
     """class for calling icon2vec model"""
@@ -30,24 +34,26 @@ class Model_icon2vec:
         self.benchmarkDatasetMin = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]   
         
     def sanitytest(self):
-        devres = self.cal_top_n(self.benchmarkDatasetMin, "devMin1000 ", N=2,stop=1000)
+        devres = self.cal_top_n(self.benchmarkDatasetMin, "devMin1000 ", N=2,stop=sys.maxsize)
 
+    # main func to call for evaluation    
     def eval(self, phrase, N=2):
-        res = [(0,0),(0,0)]
+        res = [[-100000,-100000] for _ in range(N)]
         for icon in range(len(self.V)):
             score = np.dot(phrase, self.V[icon])
-            if score > res[0][1]:
-                res[0] = (icon, score)
-            elif score > res[1][1]:
-                res[1] = (icon, score)
-#         print(rtn)
-        return [res[0][0], res[1][0]] 
+            for n in range(N):
+                if score > res[n][1]:
+                    res = res[:n]+[[icon, score]]+res[n:-1]
+                    break
+        return res
         
     def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
         # quick assessment for early termination:
         results = [] # for phrase - top N icons
         for ph_idx in range(min(stop, len(dataset[1]))):
-            results.append(self.eval(dataset[1][ph_idx]))
+            res = self.eval(dataset[1][ph_idx])
+            result = [r[0] for r in res]
+            results.append(result)
         return self.cal_metrics(results, dataset[2], dataset[0], str, N=N)
         
         
@@ -91,5 +97,6 @@ class Model_icon2vec:
         print(s)
         
         
-M = Model_icon2vec("../results/minworddev/lr-0.0003_ep-50000_dr-0_P1-0.134_P2-0.21.p")
+M = Model_icon2vec("../results/minword/lr-0.0003_ep-50000_dr-0_P1-0.11462964877813395_P2-0.18149622582980043.p")
+
 M.sanitytest()

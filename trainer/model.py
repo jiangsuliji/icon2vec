@@ -37,6 +37,7 @@ class Text2Vec:
             model_params: Parameters for the model
             num_icons: Number of icons we will ultimately train
         """
+        self.aa = False
         self.model_params = model_params
         self.num_cols = num_icons
         self.savedModels = set()
@@ -278,16 +279,13 @@ class Text2Vec:
                     continue
                 if devres[1] < max_res["min1000"][1]:
                     continue
-#                 self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]))
-                V = self.session.run(self.V[0])
-#                 print(V)
-                print(len(V))
-                self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]), V)
-                
                 if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
                     max_res["min1000"] = devres
                     testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
-
+                    V = self.session.run(self.V[0])
+                    
+#                     self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]),V)
+                    
                     if testres[1] > max_res["min5000"][1]:
                         max_res["min5000"] = testres
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
@@ -296,7 +294,7 @@ class Text2Vec:
 #                             if testminallres[1] > max_res["minWordAll"][1]:
                             max_res["minWordAll"] = testminallres
 #                                 max_res["notMinAll"] = testallres
-
+                            self.saveModel(self.model_params.model_folder("minword", testminallres[0], testminallres[1]), V)
 #                 if devres[1] > 0.15:
 #                     benchmarkres = self.cal_top_n(self.benchmarkDataset, "bench   ", N=2, stop=1000) 
 #                     benchmarkminires = self.cal_top_n(self.benchmarkDatasetMin, "benchmin", N=2)
@@ -322,12 +320,14 @@ class Text2Vec:
         for ph_idx in range(min(stop, len(dataset[1]))):
 #             print(dataset[1][ph_idx])
 #             print(np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1)).shape)
+            
             res = self.session.run(self.prob, feed_dict={
                     self.col:indices_arr,
                     self.phrase_vec: np.tile(np.array(dataset[1][ph_idx]), (self.num_cols, 1))
             })
-
             results.append(sorted(indices_arr, key=lambda i:res[i], reverse=True)[:N])
+        
+        
         if str == "bench   ":
             for i in range(10):
                 print("phrase:", dataset[4][i])
