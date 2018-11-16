@@ -40,7 +40,7 @@ class Model_icon2vec:
     def eval(self, phrase, N=2):
         res = [[-100000,-100000] for _ in range(N)]
         for icon in range(len(self.V)):
-            score = np.dot(phrase, self.V[icon])
+            score = sigmoid(np.dot(phrase, self.V[icon]))
             for n in range(N):
                 if score > res[n][1]:
                     res = res[:n]+[[icon, score]]+res[n:-1]
