@@ -72,7 +72,8 @@ class Text2Vec:
                 P = tf.get_variable("P"+str(idx), shape=[prev, model_params.nn_params[idx]], initializer=tf.contrib.layers.xavier_initializer())
                 prev = model_params.nn_params[idx]
                 score = tf.matmul(score, P)
-#                 score = tf.tanh(tf.matmul(score, P))
+                score = tf.nn.relu(score)
+#                 score = tf.tanh(score)
 #                 print("\n")
 #                 print("P",P)
 #                 print("score", score)
@@ -472,7 +473,7 @@ class Text2VecMulti:
         res = []
         for i in range(len(b)):
             num_pos = sum(b[i])
-            j = num_pos
+            j = num_pos*5
             while j != 0:
                 tryi = np.random.randint(self.num_icons)
                 if b[i][tryi] == 0:
@@ -501,7 +502,7 @@ class Text2VecMulti:
                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
 
-            if epoch % 10 == 0:
+            if epoch % 50 == 0:
                 print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
 
                 devres = self.cal_top_n(self.devset, "dev", N=2)
