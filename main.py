@@ -6,7 +6,7 @@ import pickle as pk
 # External dependencies
 from trainer.searcher import Searcher
 from trainer.modelparam import ModelParams
-from trainer.model import Text2VecMulti
+# from trainer.model import Text2VecMulti
 
 # Authorship
 __author__ = "Ji Li"
@@ -14,7 +14,7 @@ __email__ = "jili5@microsoft.com"
 
 # searcher logic 
 config = {
-    "nn_params": [[300, 1000]],
+    "nn_params": [[300]],
     "max_epochs": [50000], 
     "learning_rate": [0.0003], 
     "batch_size": [1024], 

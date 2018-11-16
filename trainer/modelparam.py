@@ -51,7 +51,7 @@ class ModelParams:
         fileObject.close()
 
     # TODO jili5: update this later
-    def model_folder(self, dataset_name):
+    def model_folder(self, dataset_name, p1, p2):
         """Get the model path for a given dataset
 
         Args:
@@ -61,4 +61,4 @@ class ModelParams:
             The model path for a given dataset
         """
         return str.format(
-            str.format('./results/{}/k-{}_ep-{}_dr-{}', dataset_name, self.out_dim, self.max_epochs, int(self.dropout * 10)))
+            str.format('./results/{}/lr-{}_ep-{}_dr-{}_P1-{}_P2-{}', dataset_name, self.learning_rate, self.max_epochs, int(self.dropout * 10), p1, p2))

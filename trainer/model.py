@@ -39,6 +39,7 @@ class Text2Vec:
         """
         self.model_params = model_params
         self.num_cols = num_icons
+        self.savedModels = set()
         
         self.initializeDataset(trainset, devset, testset)
         self.initializeDatasetWithBenchmarkTraining()
@@ -238,6 +239,7 @@ class Text2Vec:
         self.minimization_op = self.optimizer.minimize(self.loss)
         
         self.initializeSession()
+        self.saver = tf.train.Saver()
         epoch = 0
         total_data_entry = self.trainset[0].shape[0]
         half_data_entry = self.trainset[0].shape[0]//2
@@ -276,9 +278,16 @@ class Text2Vec:
                     continue
                 if devres[1] < max_res["min1000"][1]:
                     continue
+#                 self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]))
+                V = self.session.run(self.V[0])
+#                 print(V)
+                print(len(V))
+                self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]), V)
+                
                 if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
                     max_res["min1000"] = devres
                     testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
+
                     if testres[1] > max_res["min5000"][1]:
                         max_res["min5000"] = testres
                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
@@ -395,6 +404,20 @@ class Text2Vec:
         self.session.close()
         ops.reset_default_graph()
         tf.reset_default_graph()
+        
+        
+    def saveModel(self, pathName, V):
+        """save the model with Pat1 Pat2 value"""
+
+        if not pathName in self.savedModels:
+            print("saving to ", pathName)
+#         # save the tf meta model
+#             self.savedModels.add(pathName)
+#             self.saver.save(self.session, pathName)
+            # save the matrix only
+            fileObject = open(pathName+".p", "wb")
+            pk.dump(V, fileObject)
+            fileObject.close()       
 
 #-----------------------------------------------------------------------
 #                  multi class classifier
