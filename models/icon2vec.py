@@ -8,7 +8,19 @@ __author__ = "Ji Li"
 __email__ = "jili5@microsoft.com"
 
 def sigmoid(x):
-    return 1 / (1 + math.exp(-x))
+    try:
+        if x < -300:
+            return 0.0
+        return 1 / (1 + math.exp(-x))
+    except:
+        print("OVERFLOW!!!!!!!!!!!!!!!!!!!!",x)
+        return 0.0
+    
+    
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
 
 
 class Model_icon2vec:
@@ -19,6 +31,8 @@ class Model_icon2vec:
         print("loading", model_path)
         fileObject = open(model_path, 'rb')
         self.V = pk.load(fileObject)
+        fileObject = open("tmp/fasttext.p", 'rb')
+        self.fast = pk.load(fileObject)
         fileObject.close()
     
     def __open_benchmark(self):
@@ -46,14 +60,59 @@ class Model_icon2vec:
                     res = res[:n]+[[icon, score]]+res[n:-1]
                     break
         return res
+    
+    def combinedcall (self, phrase, fastres, N=2):
+        r = []
+        d = {}
+        for it in fastres:
+            d[it[0]] = it[1]
+        
+        for icon in range(len(self.V)):
+            score = sigmoid(np.dot(phrase, self.V[icon]))
+            if icon in d:
+                score += d[icon]
+#             else:
+#                 print("miss", icon)
+            
+            r.append([icon, score])
+            
+        r.sort(key=lambda x:x[1], reverse=True)
+#         print(r)
+        
+#         rsoft = softmax([k[1] for k in r])
+#         for i in range(len(rsoft)):
+#             r[i] = [r[i][0], rsoft[i]]
+        
+#         print(r[:10])
+#         print(fastres)
+        
+    
+        
+#         return self.comb1(r[:10],fastres)
+#         print(r[:2])
+#         raise
+        return r[:2]
+        
+        
+    def comb1 (self, a, b):
+        rtn = a + b
+        rtn.sort(key=lambda x:x[1], reverse=True)
+        
+        raise
+        return rtn[:2]
+        
         
     def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
         # quick assessment for early termination:
         results = [] # for phrase - top N icons
         for ph_idx in range(min(stop, len(dataset[1]))):
-            res = self.eval(dataset[1][ph_idx])
+#             res = self.eval(dataset[1][ph_idx])
+            res = self.combinedcall(dataset[1][ph_idx], self.fast[ph_idx], 2)
+            
             result = [r[0] for r in res]
             results.append(result)
+
+            
         return self.cal_metrics(results, dataset[2], dataset[0], str, N=N)
         
         
