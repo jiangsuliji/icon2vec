@@ -18,13 +18,15 @@ params = {
 #     "datasetName": "minwordset",
     
     "savedir": "benchmarks/ErikOveson_11_05/",#for orignal dataset
-#     "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
+    "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
-    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+#     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
     
-#     "embedding_method": "word2vec"
-#     "embedding_method": "glove"
-    "embedding_method": "fasttext"
+#     "embedding_method": "word2vec",
+#     "embedding_method": "glove",
+    "embedding_method": "fasttext",
+    
+    "multiclass": True
 }
 
 
@@ -54,13 +56,15 @@ class benchmarkPreprocessor:
         self.iconNum = len(self.mp_icon2idx)
 #         print(self.iconNum)
         fileObject.close()
-   
+
+    
     def loadStopList(self):
         self.stoplist = set()
         with open("stoplists/stoplist2") as f:
             for line in f:
                 self.stoplist.add(line[:-1])
 #         print(self.stoplist)
+
 
     def __genLabelIdx(self, label):
         if label+".svg" in self.mp_icon2idx:
@@ -90,12 +94,21 @@ class benchmarkPreprocessor:
         if label == "PlayingCards":
             return self.mp_icon2idx["PlayingCard.svg"]
         print("missing:", label)
+        
+        
+    def genLabel(self, icons):
+        res = [0]*self.iconNum
+        for icon in icons:
+            res[self.__genLabelIdx(icon)] = 1
+        return res
+    
     
     def loadCSV(self):
         """main entry to load csv"""
         self.benchmark = self.__loadErikOveson_11_05_testset()        
         self.__process_method_0()
 #         print(self.benchmark[10])
+    
     
     def __loadErikOveson_11_05_testset(self):
         """load """
@@ -124,8 +137,13 @@ class benchmarkPreprocessor:
                     else:
                         phrase = items[2]
     #                 print(originalSlideCID,labels,phrase)
-                    for label in labels:
-                        res.append([phrase, label, originalSlideCID])
+                    if params["multiclass"] == False:
+                        for label in labels:
+                            res.append([phrase, label, originalSlideCID])
+                    elif params["multiclass"] == True:
+                        res.append([phrase, labels, originalSlideCID])
+                    else:
+                        raise
                     lineID += 1
                 except:
                     print(line, items)
@@ -146,11 +164,18 @@ class benchmarkPreprocessor:
 #                 if re.match("^[A-Za-z0-9_-]*$", i):
 #                 cleaned_items.add(i)
                 cleaned_items.append(i)
-            self.benchmark[idx] = [cleaned_items, self.__genLabelIdx(label), label, originalSlideCID]
-        
-    
+            if params["multiclass"] == False:
+                self.benchmark[idx] = [cleaned_items, self.__genLabelIdx(label), label, originalSlideCID]
+            elif params["multiclass"] == True:
+#                 print(label)
+                self.benchmark[idx] = [cleaned_items, self.genLabel(label), label, originalSlideCID]
+#                 print(self.benchmark[idx][1])
+                
     def outPut(self):
-        fileObject = open(params["savedir"]+params["datasetName"]+"."+self.embedding_method+".p", "wb")
+        if params["multiclass"] == False:
+            fileObject = open(params["savedir"]+params["datasetName"]+"."+self.embedding_method+".p", "wb")
+        elif params["multiclass"] == True:
+            fileObject = open(params["savedir"]+params["datasetName"]+"."+self.embedding_method+".multiclass.p", "wb")
         pk.dump(self.mydataset, fileObject)
         fileObject.close()
 
@@ -161,13 +186,13 @@ class benchmarkPreprocessor:
         for idx, item in enumerate(self.benchmark):
             phrase, labelidx = item[0], item[1]
             phrase_embedding = self.model[phrase]
-            self.mydataset.append([np.array(phrase_embedding),labelidx, item[2], ' '.join(phrase)])
+            self.mydataset.append([np.array(phrase_embedding),np.array(labelidx), item[2], ' '.join(phrase)])
 #             if idx == 3:
 #                 break
 #         prist(self.mydataset)
         self.outPut()
         print(self.mydataset[0])
-        print("processed ",self.embedding_method, "with", len(self.mydataset), "entries")
+        print("processed ",self.embedding_method, "with", len(self.mydataset), "entries; multiclass=", params["multiclass"])
 
 
 M = benchmarkPreprocessor()
