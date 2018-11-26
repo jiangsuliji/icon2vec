@@ -35,7 +35,8 @@ class Text2VecMulti:
     
     def initializeDatasetWithBenchmarkTraining(self):
         """initialize benchmark """ 
-        fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.multiclass.p", 'rb')
+        fileObject = open("data/benchmarks/trainset1000_train.pk", 'rb')
+#         fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.multiclass.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         # parse the positive
         icon_idx, phrase_embedding, labels = [], [], []
@@ -51,8 +52,9 @@ class Text2VecMulti:
 #             print(icon_idx, phrase_embedding, labels)
         self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         self.num_icons = len(icon_idx[0])
-        
-        fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.p", 'rb')
+         
+#         fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.p", 'rb')
+        fileObject = open("data/benchmarks/trainset1000_dev.pk", 'rb')
         self.benchmarkMin = pk.load(fileObject)
         fileObject.close()
        
@@ -63,6 +65,17 @@ class Text2VecMulti:
 #             labels.append(1)
         self.benchmarkDatasetMin = [np.array(icon_idx), np.array(phrase_embedding)]
 
+        fileObject = open("data/benchmarks/trainset1000_test.pk", 'rb')
+        self.test = pk.load(fileObject)
+        fileObject.close()
+       
+        icon_idx, phrase_embedding, labels = [], [], []
+        for item in self.test:
+            icon_idx.append(item[1])
+            phrase_embedding.append(item[0])
+#             labels.append(1)
+        self.test = [np.array(icon_idx), np.array(phrase_embedding)]
+    
         
     def initializeSession(self):
         self.session = tf.Session()
@@ -91,7 +104,7 @@ class Text2VecMulti:
             for idx, num in enumerate(self.model_params.nn_params):
                 W = tf.get_variable("W"+str(idx), shape=[prev, num], initializer=tf.contrib.layers.xavier_initializer())
                 B = tf.get_variable("B"+str(idx), shape=[num], initializer=tf.contrib.layers.xavier_initializer())
-                score = tf.matmul(score, W)+B
+                score = tf.add(tf.matmul(score, W), B)
                 score = tf.nn.relu(score)
                 prev = num
                 Wmat.append(W)
@@ -100,20 +113,20 @@ class Text2VecMulti:
             # add last layer
             W = tf.get_variable("W", shape=[prev, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
             B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
-            self.logits = tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout))+B
-#             self.logits = tf.nn.sigmoid(self.logits)
+            self.logits = tf.add(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)),B)
             Wmat.append(W)
             Bmat.append(B)
             print(Wmat, Bmat)
             
             
-#         print(self.logits, self.y)
+        print(self.logits, self.y)
+#         self.loss_org = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y)
         self.loss_org = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.y)
-#         self.loss = tf.reduce_mean(self.loss_org)
+        self.loss = tf.reduce_sum(self.loss_org)
 #         print(self.loss_org)
         self.supp = tf.placeholder(tf.float32, shape = [None, self.num_icons], name = "supp")
-        self.loss_towork = tf.multiply(self.loss_org, self.supp)
-        self.loss = tf.reduce_mean(self.loss_towork)
+#         self.loss_towork = tf.multiply(self.loss_org, self.supp)
+#         self.loss = tf.reduce_mean(self.loss_towork)
 #         print(self.loss)
         
     
@@ -136,7 +149,7 @@ class Text2VecMulti:
     # train the model using the appropriate parameters
     def train(self):
         """Train the model"""
-        self.optimizer = tf.train.AdamOptimizer(self.model_params.learning_rate)
+        self.optimizer = tf.train.GradientDescentOptimizer(self.model_params.learning_rate)
         minimization_op = self.optimizer.minimize(self.loss)
         
         self.initializeSession()
@@ -153,7 +166,7 @@ class Text2VecMulti:
 #             print(y_sup[0])
 #             raise
             
-            _, current_loss = self.session.run([minimization_op, self.loss], feed_dict={
+            _, current_loss, y, loss_org, logits = self.session.run([minimization_op, self.loss, self.y, self.loss_org, self.logits], feed_dict={
                 self.phrase_vec:self.trainset[1][training_idx],
                 self.y:self.trainset[0][training_idx],
                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
@@ -166,9 +179,11 @@ class Text2VecMulti:
             
             if epoch % spe == 0:
                 print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
+#                 print(y[0], logits[0], loss_org[0])
                 epoch += 1
-                trainres = self.cal_top_n(self.trainset, "train10000", N=2, stop = 800000)
-                devres = self.cal_top_n(self.benchmarkDatasetMin, "devMin1000 ", N=2,stop=1000)
+                trainres = self.cal_top_n(self.trainset, "train train", N=2, stop = 800000)
+                devres = self.cal_top_n(self.benchmarkDatasetMin, "train dev", N=2,stop=2000)
+                testres = self.cal_top_n(self.test, "train test", N=2,stop=2000)
 #                 if not devres:
 #                     continue
 #                 if devres[1] < max_res["min1000"][1]:
@@ -199,7 +214,7 @@ class Text2VecMulti:
 	
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
-        res = self.session.run(self.logits, feed_dict={
+        res  = self.session.run(self.logits, feed_dict={
             self.phrase_vec:dataset[1][:min(stop, sys.maxsize)],
         })
 #         print(res,res.shape)
@@ -227,7 +242,7 @@ class Text2VecMulti:
                         T[n] += 1
                     else:
                         F[n] += 1
-            else: 
+            else:
 #                 print(len(icons[i]))
                 if icons[i][results[i][0]] == 1:
                     T[0] += 1
