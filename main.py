@@ -34,7 +34,7 @@ __email__ = "jili5@microsoft.com"
 # searcher logic for the non-multi-class embedding
 
 # multi-class embedding
-modelParams = ModelParams(in_dim=300, max_epochs=300000, batch_size=100, learning_rate=0.001, class_threshold=0.5, dropout=0., nn_params = [300, 300])
+modelParams = ModelParams(in_dim=300, max_epochs=300000, batch_size=5000, learning_rate=0.1, class_threshold=0.5, dropout=0.1, nn_params = [300, 1000, 1000, 1000, 1000, 1000])
 # # embedding = "word2vec"
 # embedding = "fasttext"
 # # embedding = "glove"

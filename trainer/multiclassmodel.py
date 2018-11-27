@@ -103,30 +103,39 @@ class Text2VecMulti:
             score = self.phrase_vec
             for idx, num in enumerate(self.model_params.nn_params):
                 W = tf.get_variable("W"+str(idx), shape=[prev, num], initializer=tf.contrib.layers.xavier_initializer())
-                B = tf.get_variable("B"+str(idx), shape=[num], initializer=tf.contrib.layers.xavier_initializer())
+#                 W = tf.get_variable("W"+str(idx), shape=[prev, num], initializer=tf.truncated_normal_initializer(stddev=5e-2))
+                B = tf.get_variable("B"+str(idx), shape=[num], initializer=tf.constant_initializer(0.1))
+#                 W_fc1 = tf.truncated_normal([prev, num], mean=0.5, stddev=0.707)
+#                 W = tf.Variable(W_fc1, name='W_fc'+str(idx))
+
+#                 b_fc1 = tf.truncated_normal([num], mean=0.5, stddev=0.707)
+#                 B = tf.Variable(b_fc1, name='b_fc'+str(idx))
                 score = tf.add(tf.matmul(score, W), B)
-                score = tf.nn.relu(score)
+
                 prev = num
                 Wmat.append(W)
                 Bmat.append(B)
                 
             # add last layer
+#             W = tf.get_variable("W", shape=[prev, self.num_icons], initializer=tf.truncated_normal_initializer(stddev=5e-2))
             W = tf.get_variable("W", shape=[prev, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
-            B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
+            B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.constant_initializer(0.1))
             self.logits = tf.add(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)),B)
+#             self.logits = tf.nn.sigmoid(tf.add(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)),B))
             Wmat.append(W)
             Bmat.append(B)
             print(Wmat, Bmat)
             
-            
+        
         print(self.logits, self.y)
 #         self.loss_org = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y)
         self.loss_org = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.y)
-        self.loss = tf.reduce_sum(self.loss_org)
+#         self.loss_org = (self.logits - self.y)**2
+#         self.loss = tf.reduce_mean(self.loss_org)
 #         print(self.loss_org)
         self.supp = tf.placeholder(tf.float32, shape = [None, self.num_icons], name = "supp")
-#         self.loss_towork = tf.multiply(self.loss_org, self.supp)
-#         self.loss = tf.reduce_mean(self.loss_towork)
+        self.loss = tf.multiply(self.loss_org, self.supp)
+        self.loss = tf.reduce_mean(self.loss)
 #         print(self.loss)
         
     
@@ -149,18 +158,17 @@ class Text2VecMulti:
     # train the model using the appropriate parameters
     def train(self):
         """Train the model"""
-        self.optimizer = tf.train.GradientDescentOptimizer(self.model_params.learning_rate)
-        minimization_op = self.optimizer.minimize(self.loss)
+#         minimization_op = tf.train.RMSPropOptimizer(0.25, momentum=0.5).minimize(self.loss_org)
+        minimization_op = tf.train.GradientDescentOptimizer(self.model_params.learning_rate).minimize(self.loss)
         
         self.initializeSession()
         epoch = 0
 
         max_res = {"min1000":[0,0], "min5000":[0,0], "minWordAll":[0,0], "train1000": [0,0], "train5000": [0,0]} 
         while epoch < self.model_params.max_epochs:   
-            training_idx = np.random.randint(self.num_icons, size=self.model_params.batch_size)
+            training_idx = np.random.randint(len(self.trainset[0]), size=self.model_params.batch_size)
             y_org = self.trainset[0][training_idx]
             y_sup = self.suppress(y_org)
-            
 #             print(self.trainset[1][training_idx][0])
 #             print(self.trainset[0][training_idx][0])
 #             print(y_sup[0])
@@ -178,7 +186,7 @@ class Text2VecMulti:
                 spe = 10
             
             if epoch % spe == 0:
-                print("Epoch=%d loss=%3.1f" %(epoch, current_loss))
+                print("Epoch=%d loss=%8.5f" %(epoch, current_loss))
 #                 print(y[0], logits[0], loss_org[0])
                 epoch += 1
                 trainres = self.cal_top_n(self.trainset, "train train", N=2, stop = 800000)

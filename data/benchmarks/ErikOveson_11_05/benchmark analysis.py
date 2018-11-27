@@ -72,48 +72,48 @@ def process(dataset, startstr):
 
     print(newidxmap)
     
-    strain = []
-    sdev = []
-    stest = []
-    addedphrase = set()
-    for entry in dataset:
-        if entry[3] in addedphrase:
-            continue
-        phraseLen = len(entry[3].split())
-        if phraseLen < 4 or phraseLen > 100:
-            continue
+#     strain = []
+#     sdev = []
+#     stest = []
+#     addedphrase = set()
+#     for entry in dataset:
+#         if entry[3] in addedphrase:
+#             continue
+#         phraseLen = len(entry[3].split())
+#         if phraseLen < 4 or phraseLen > 100:
+#             continue
         
-        iconIdx = 0
-        for idx, value in enumerate(entry[1]):
-            if value == 1:
-                iconIdx = idx
-                break
-        if not iconIdx in dtopicons:
-            continue
-        if dtopicons[iconIdx] >= 1000:
-            continue
+#         iconIdx = 0
+#         for idx, value in enumerate(entry[1]):
+#             if value == 1:
+#                 iconIdx = idx
+#                 break
+#         if not iconIdx in dtopicons:
+#             continue
+#         if dtopicons[iconIdx] >= 1000:
+#             continue
             
-        entry[1] = [0]*20
-        entry[1][newidxmap[iconIdx]] = 1
-#         entry[1][newidxmap]
-        addedphrase.add(entry[3])
+#         entry[1] = [0]*20
+#         entry[1][newidxmap[iconIdx]] = 1
+# #         entry[1][newidxmap]
+#         addedphrase.add(entry[3])
     
-        if dtopicons[iconIdx] <800:
-            strain.append(entry)
-        elif dtopicons[iconIdx] < 900:
-            sdev.append(entry)
-        else:
-            stest.append(entry)
-        dtopicons[iconIdx] += 1
+#         if dtopicons[iconIdx] <800:
+#             strain.append(entry)
+#         elif dtopicons[iconIdx] < 900:
+#             sdev.append(entry)
+#         else:
+#             stest.append(entry)
+#         dtopicons[iconIdx] += 1
     
     
-    print(len(strain), len(stest), len(sdev))
+#     print(len(strain), len(stest), len(sdev))
     
-    pk.dump(strain, open("../trainset1000_train.pk", "wb"))
-    pk.dump(sdev, open("../trainset1000_dev.pk", "wb"))
-    pk.dump(stest, open("../trainset1000_test.pk", "wb"))
-    print(strain[0])
+#     pk.dump(strain, open("../trainset1000_train.pk", "wb"))
+#     pk.dump(sdev, open("../trainset1000_dev.pk", "wb"))
+#     pk.dump(stest, open("../trainset1000_test.pk", "wb"))
+#     print(strain[0])
     
         
-process(trainset, "trainset")
-# process(testset, "testset")
+# process(trainset, "trainset")
+process(testset, "testset")
