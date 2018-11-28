@@ -35,14 +35,26 @@ class Text2VecMulti:
     
     def initializeDatasetWithBenchmarkTraining(self):
         """initialize benchmark """ 
-        fileObject = open("data/benchmarks/trainset1000_train.pk", 'rb')
-#         fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.multiclass.p", 'rb')
+#         fileObject = open("data/benchmarks/trainset1000_train.pk", 'rb')
+        fileObject = open("data/benchmarks/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.multiclass.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         # parse the positive
         icon_idx, phrase_embedding, labels = [], [], []
         ph_idx = []
-
+        
+        # filtering dominantion classes
+        
         for item in benchmarktrainraw:
+#             print(item[0])
+#             print(item[1])
+#             print(item[2])
+#             print(item[3])
+#             raise
+            phraseLen = len(item[3].split())
+            if phraseLen > 100 or phraseLen < 4:
+                continue
+            
+            
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
             labels.append(item[2])
@@ -53,8 +65,8 @@ class Text2VecMulti:
         self.trainset = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
         self.num_icons = len(icon_idx[0])
          
-#         fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.p", 'rb')
-        fileObject = open("data/benchmarks/trainset1000_dev.pk", 'rb')
+        fileObject = open("data/benchmarks/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.multiclass.p", 'rb')
+#         fileObject = open("data/benchmarks/trainset1000_dev.pk", 'rb')
         self.benchmarkMin = pk.load(fileObject)
         fileObject.close()
        
@@ -63,18 +75,19 @@ class Text2VecMulti:
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
 #             labels.append(1)
-        self.benchmarkDatasetMin = [np.array(icon_idx), np.array(phrase_embedding)]
+            labels.append(item[2])
+        self.benchmarkDatasetMin = [np.array(icon_idx), np.array(phrase_embedding), np.array(labels)]
 
-        fileObject = open("data/benchmarks/trainset1000_test.pk", 'rb')
-        self.test = pk.load(fileObject)
-        fileObject.close()
+#         fileObject = open("data/benchmarks/trainset1000_test.pk", 'rb')
+#         self.test = pk.load(fileObject)
+#         fileObject.close()
        
-        icon_idx, phrase_embedding, labels = [], [], []
-        for item in self.test:
-            icon_idx.append(item[1])
-            phrase_embedding.append(item[0])
-#             labels.append(1)
-        self.test = [np.array(icon_idx), np.array(phrase_embedding)]
+#         icon_idx, phrase_embedding, labels = [], [], []
+#         for item in self.test:
+#             icon_idx.append(item[1])
+#             phrase_embedding.append(item[0])
+# #             labels.append(1)
+#         self.test = [np.array(icon_idx), np.array(phrase_embedding)]
     
         
     def initializeSession(self):
@@ -110,7 +123,7 @@ class Text2VecMulti:
 
 #                 b_fc1 = tf.truncated_normal([num], mean=0.5, stddev=0.707)
 #                 B = tf.Variable(b_fc1, name='b_fc'+str(idx))
-                score = tf.add(tf.matmul(score, W), B)
+                score = tf.nn.relu(tf.add(tf.matmul(score, W), B))
 
                 prev = num
                 Wmat.append(W)
@@ -119,9 +132,9 @@ class Text2VecMulti:
             # add last layer
 #             W = tf.get_variable("W", shape=[prev, self.num_icons], initializer=tf.truncated_normal_initializer(stddev=5e-2))
             W = tf.get_variable("W", shape=[prev, self.num_icons], initializer=tf.contrib.layers.xavier_initializer())
-            B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.constant_initializer(0.1))
-            self.logits = tf.add(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)),B)
-#             self.logits = tf.nn.sigmoid(tf.add(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)),B))
+#             B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.constant_initializer(0.1))
+            self.logits = tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout))
+#             self.logits = tf.nn.sigmoid(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)))
             Wmat.append(W)
             Bmat.append(B)
             print(Wmat, Bmat)
@@ -133,9 +146,9 @@ class Text2VecMulti:
 #         self.loss_org = (self.logits - self.y)**2
 #         self.loss = tf.reduce_mean(self.loss_org)
 #         print(self.loss_org)
-        self.supp = tf.placeholder(tf.float32, shape = [None, self.num_icons], name = "supp")
-        self.loss = tf.multiply(self.loss_org, self.supp)
-        self.loss = tf.reduce_mean(self.loss)
+#         self.supp = tf.placeholder(tf.float32, shape = [None, self.num_icons], name = "supp")
+#         self.loss = tf.multiply(self.loss_org, self.supp)
+        self.loss = tf.reduce_mean(self.loss_org)
 #         print(self.loss)
         
     
@@ -159,7 +172,8 @@ class Text2VecMulti:
     def train(self):
         """Train the model"""
 #         minimization_op = tf.train.RMSPropOptimizer(0.25, momentum=0.5).minimize(self.loss_org)
-        minimization_op = tf.train.GradientDescentOptimizer(self.model_params.learning_rate).minimize(self.loss)
+        minimization_op = tf.train.AdamOptimizer(self.model_params.learning_rate).minimize(self.loss)
+#         minimization_op = tf.train.GradientDescentOptimizer(self.model_params.learning_rate).minimize(self.loss)
         
         self.initializeSession()
         epoch = 0
@@ -167,21 +181,21 @@ class Text2VecMulti:
         max_res = {"min1000":[0,0], "min5000":[0,0], "minWordAll":[0,0], "train1000": [0,0], "train5000": [0,0]} 
         while epoch < self.model_params.max_epochs:   
             training_idx = np.random.randint(len(self.trainset[0]), size=self.model_params.batch_size)
-            y_org = self.trainset[0][training_idx]
-            y_sup = self.suppress(y_org)
-#             print(self.trainset[1][training_idx][0])
+#             y_org = self.trainset[0][training_idx]
+#             y_sup = self.suppress(y_org)
+#             print(len(self.trainset[1][training_idx][0]))
 #             print(self.trainset[0][training_idx][0])
 #             print(y_sup[0])
 #             raise
             
-            _, current_loss, y, loss_org, logits = self.session.run([minimization_op, self.loss, self.y, self.loss_org, self.logits], feed_dict={
+            _, current_loss, y, logits = self.session.run([minimization_op, self.loss, self.y,self.logits], feed_dict={
                 self.phrase_vec:self.trainset[1][training_idx],
-                self.y:self.trainset[0][training_idx],
-                self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
+                self.y:self.trainset[0][training_idx]
+#                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
             
             if epoch < 30000: 
-                spe = 100
+                spe = 10
             else:
                 spe = 10
             
@@ -189,21 +203,22 @@ class Text2VecMulti:
                 print("Epoch=%d loss=%8.5f" %(epoch, current_loss))
 #                 print(y[0], logits[0], loss_org[0])
                 epoch += 1
-                trainres = self.cal_top_n(self.trainset, "train train", N=2, stop = 800000)
-                devres = self.cal_top_n(self.benchmarkDatasetMin, "train dev", N=2,stop=2000)
-                testres = self.cal_top_n(self.test, "train test", N=2,stop=2000)
-#                 if not devres:
-#                     continue
-#                 if devres[1] < max_res["min1000"][1]:
-#                     continue
-#                 if devres[1] > 0.21 and devres[1]>=max_res["min1000"][1]:
-#                     max_res["min1000"] = devres
-#                     testres = self.cal_top_n(self.benchmarkDatasetMin, "devMin5000  ", N=2, stop=5000)
+                trainres = self.cal_top_n(self.trainset, "train train", N=2, stop = 8000)
+                devres = self.cal_top_n(self.benchmarkDatasetMin, "train dev1000", N=2,stop=1000)
+#                 testres = self.cal_top_n(self.test, "train test", N=2,stop=2000)
+                if not devres:
+                    continue
+                if devres[1] < max_res["min1000"][1]:
+                    continue
+                if devres[1] > 0.25 and devres[1]>=max_res["min1000"][1]:
+                    max_res["min1000"] = devres
+                    testres = self.cal_top_n(self.benchmarkDatasetMin, "train devMinAll  ", N=2, stop = 116052)
 #                     V = self.session.run(self.V[0])
                     
 # #                     self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]),V)
                     
-#                     if testres[1] > max_res["min5000"][1]:
+                    if testres[1] > max_res["minWordAll"][1]:
+                        max_res["minWordAll"] = testres
 #                         max_res["min5000"] = testres
 #                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
 #                         if testminallres[1] > max_res["minWordAll"][1]:
@@ -237,7 +252,6 @@ class Text2VecMulti:
         # icon idx for each phrase-icon pair
 #         print(results)
 #         print(icons)
-#         print(len(results), len(icons), len(icons[0]), icons[0])
 
 #         if len(results) != len(labels) or len(results) != len(icons):
 #             print("error: len of inputs not equal")

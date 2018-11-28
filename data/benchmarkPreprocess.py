@@ -18,9 +18,9 @@ params = {
 #     "datasetName": "minwordset",
     
     "savedir": "benchmarks/ErikOveson_11_05/",#for orignal dataset
-    "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
+#     "datasetName": "trainset_12-2017_9-1-2018_025Unk.ss.csv",
 #     "datasetName": "testset_SingleIcon_9-1_10-22-2018_025Unk.ss.csv",
-#     "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
+    "datasetName": "testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv", 
     
 #     "embedding_method": "word2vec",
 #     "embedding_method": "glove",
