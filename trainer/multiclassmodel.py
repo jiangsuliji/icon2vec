@@ -56,8 +56,8 @@ class Text2VecMulti:
             if len(item[2]) == 1:
                 if not item[2][0] in iconCntDict:
                     iconCntDict[item[2][0]] = 1
-                elif iconCntDict[item[2][0]] > 5000:
-                    continue
+#                 elif iconCntDict[item[2][0]] > 5000:
+#                     continue
                 else:
                     iconCntDict[item[2][0]] += 1
             
