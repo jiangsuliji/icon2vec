@@ -200,10 +200,10 @@ class Text2VecMulti:
 #                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
             
-            if epoch < 30000: 
-                spe = 10
+            if epoch < 5000: 
+                spe = 1000
             else:
-                spe = 10
+                spe = 100
             
             if epoch % spe == 0:
                 print("Epoch=%d loss=%8.5f" %(epoch, current_loss))
@@ -216,9 +216,9 @@ class Text2VecMulti:
                     continue
                 if devres[1] < max_res["min1000"][1]:
                     continue
-                if devres[1] > 0.25 and devres[1]>=max_res["min1000"][1]:
+                if devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.1:
                     max_res["min1000"] = devres
-                    testres = self.cal_top_n(self.benchmarkDatasetMin, "train devMinAll  ", N=2, stop = 116052)
+                    testres = self.cal_top_n(self.benchmarkDatasetMin, "train devMinAll  ", N=2, stop = 116000)
 #                     V = self.session.run(self.V[0])
                     
 # #                     self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]),V)
