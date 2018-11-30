@@ -45,14 +45,9 @@ class Text2VecMulti:
         # filtering dominantion classes
         iconCntDict = {}
         for item in benchmarktrainraw:
-#             print(item[0])
-#             print(item[1])
-#             print(item[2])
-#             print(item[3])
-#             raise
-            phraseLen = len(item[3].split())
-            if phraseLen > 100 or phraseLen < 4:
-                continue
+#             phraseLen = len(item[3].split())
+#             if phraseLen > 100 or phraseLen < 4:
+#                 continue
             if len(item[2]) == 1:
                 if not item[2][0] in iconCntDict:
                     iconCntDict[item[2][0]] = 1
@@ -200,8 +195,8 @@ class Text2VecMulti:
 #                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
             
-            if epoch <= 2000: 
-                spe = 2000
+            if epoch <= 10000: 
+                spe = 1000
             else:
                 spe = 100
             
