@@ -45,16 +45,19 @@ class Text2VecMulti:
         # filtering dominantion classes
         iconCntDict = {}
         for item in benchmarktrainraw:
+            item[1] = np.concatenate((item[1][:227],item[1][228:]), axis=0)
+            if "Checkmark" in item[2]:
+                continue
 #             phraseLen = len(item[3].split())
 #             if phraseLen > 100 or phraseLen < 4:
 #                 continue
-            if len(item[2]) == 1:
-                if not item[2][0] in iconCntDict:
-                    iconCntDict[item[2][0]] = 1
+#             if len(item[2]) == 1:
+#                 if not item[2][0] in iconCntDict:
+#                     iconCntDict[item[2][0]] = 1
 #                 elif iconCntDict[item[2][0]] > 5000:
 #                     continue
-                else:
-                    iconCntDict[item[2][0]] += 1
+#                 else:
+#                     iconCntDict[item[2][0]] += 1
             
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
@@ -73,6 +76,10 @@ class Text2VecMulti:
        
         icon_idx, phrase_embedding, labels = [], [], []
         for item in self.benchmarkMin:
+            item[1] = np.concatenate((item[1][:227],item[1][228:]), axis=0)
+            if "Checkmark" in item[2]:
+                continue
+            
             icon_idx.append(item[1])
             phrase_embedding.append(item[0])
 #             labels.append(1)
@@ -211,8 +218,9 @@ class Text2VecMulti:
                     continue
                 if devres[1] < max_res["min1000"][1]:
                     continue
-                if devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00:
-                    max_res["min1000"] = devres
+                if devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00 or devres[1]> 0.24:
+                    if devres[1] > max_res["min1000"][1]:
+                        max_res["min1000"] = devres
                     testres = self.cal_top_n(self.benchmarkDatasetMin, "train devMinAll  ", N=2, stop = 116000)
 #                     V = self.session.run(self.V[0])
                     
@@ -228,7 +236,7 @@ class Text2VecMulti:
 #                             max_res["minWordAll"] = testminallres
 # #                                 max_res["notMinAll"] = testallres
 # #                             self.saveModel(self.model_params.model_folder("minword", testminallres[0], testminallres[1]), V)
-
+                
             epoch += 1
 
         print("results when max dev accu:")
