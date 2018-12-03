@@ -173,12 +173,13 @@ class Text2VecMulti:
             
             _, current_loss, y, logits = self.session.run([minimization_op, self.loss, self.y,self.logits], feed_dict={
                 self.phrase_vec:self.trainset[1][training_idx],
-                self.y:self.trainset[0][training_idx]
+                self.y:self.trainset[0][training_idx],
+                self.trainFlag: True
 #                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
             
-            if epoch <= 10000: 
-                spe = 100
+            if epoch <= 8000: 
+                spe = 1000
             else:
                 spe = 10
             
@@ -191,9 +192,9 @@ class Text2VecMulti:
 #                 testres = self.cal_top_n(self.test, "train test", N=2,stop=2000)
                 if not devres:
                     continue
-                if devres[1] < max_res["min1000"][1]:
+                if devres[1] < max_res["min1000"][1]-0.01:
                     continue
-                if (devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00) or devres[1]> 0.24:
+                if (devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00) or devres[1]> 0.245:
                     if devres[1] > max_res["min1000"][1]:
                         max_res["min1000"] = devres
                     testres = self.cal_top_n(self.testset, "train devMinAll  ", N=2, stop = 116000)
@@ -222,6 +223,7 @@ class Text2VecMulti:
     # find top N icon indices and return P,R,F1,TP,TN,FP,FN
     def cal_top_n(self, dataset, str, N=2, stop = sys.maxsize):
         res  = self.session.run(self.logits, feed_dict={
+            self.trainFlag: False,
             self.phrase_vec:dataset[1][:min(stop, sys.maxsize)],
         })
 #         print(res,res.shape)
