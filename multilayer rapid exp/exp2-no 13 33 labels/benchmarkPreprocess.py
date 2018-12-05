@@ -33,8 +33,8 @@ class benchmarkPreprocessor:
             self.model = Word2Vec()
         elif "fasttext" == self.embedding_method:
 #             self.model = FastText('data/crawl-300d-2M-subword.vec.bin', loadbinary=True)
-#             self.model = FastText('C:/workshop/icon2vec/data/fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
-#         elif "glove" == self.embedding_method:
+            self.model = FastText('C:/workshop/icon2vec/data/fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
+        elif "glove" == self.embedding_method:
             self.model = GloVe('data/glove.42B.300d.txt.bin', loadbinary=True)
             
         self.loadStopList()
