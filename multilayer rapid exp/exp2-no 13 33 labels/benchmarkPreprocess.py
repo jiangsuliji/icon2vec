@@ -32,9 +32,10 @@ class benchmarkPreprocessor:
         if "word2vec" == self.embedding_method:
             self.model = Word2Vec()
         elif "fasttext" == self.embedding_method:
-            self.model = FastText('C:/workshop/icon2vec/data/fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
-        elif "glove" == self.embedding_method:
-            self.model = GloVe('glove/glove.42B.300d.txt.bin', loadbinary=True)
+#             self.model = FastText('data/crawl-300d-2M-subword.vec.bin', loadbinary=True)
+#             self.model = FastText('C:/workshop/icon2vec/data/fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
+#         elif "glove" == self.embedding_method:
+            self.model = GloVe('data/glove.42B.300d.txt.bin', loadbinary=True)
             
         self.loadStopList()
         self.loadCSV()
@@ -108,7 +109,7 @@ class benchmarkPreprocessor:
                     else:
                         phrase = items[2]
                     phrase = phrase.split()
-    #                 print(originalSlideCID,labels,phrase)
+#                     print(originalSlideCID,labels,phrase)
                     if len(labels) > 0:
                         res.append([phrase, labels, originalSlideCID])
                     lineID += 1
@@ -136,6 +137,7 @@ class benchmarkPreprocessor:
         d = []
         for idx, item in enumerate(rawdataset):
             phrase, labels = item[0], item[1]
+#             print(idx, phrase, labels)
             phrase_embedding = self.model[phrase]
             d.append([np.array(phrase_embedding),np.array(self.genLabel(labels)), ' '.join(phrase), labels])
 #             if idx == 1:

@@ -109,6 +109,7 @@ class Text2VecMulti:
             # todo multi layer
             Wmat = []
             Bmat = []
+            self.regularizer = 0
             prev = self.in_dim
             score = self.phrase_vec
             for idx, num in enumerate(self.nn_params):
@@ -121,6 +122,7 @@ class Text2VecMulti:
 #                 b_fc1 = tf.truncated_normal([num], mean=0.5, stddev=0.707)
 #                 B = tf.Variable(b_fc1, name='b_fc'+str(idx))
                 score = tf.nn.relu(tf.add(tf.matmul(score, W), B))
+#                 self.regularizer += tf.nn.l2_loss(W)
 
                 prev = num
                 Wmat.append(W)
@@ -132,6 +134,7 @@ class Text2VecMulti:
 #             B = tf.get_variable("B", shape=[self.num_icons], initializer=tf.constant_initializer(0.1))
             W = tf.layers.dropout(inputs=W, rate=self.dropout, training=self.trainFlag, name="afterDropout")
             self.logits = tf.matmul(score, W)
+#             self.regularizer += tf.nn.l2_loss(W) 
 #             self.logits = tf.nn.sigmoid(tf.matmul(score, tf.nn.dropout(W,1-self.model_params.dropout)))
             Wmat.append(W)
             Bmat.append(B)
@@ -146,7 +149,7 @@ class Text2VecMulti:
 #         print(self.loss_org)
 #         self.supp = tf.placeholder(tf.float32, shape = [None, self.num_icons], name = "supp")
 #         self.loss = tf.multiply(self.loss_org, self.supp)
-        self.loss = tf.reduce_mean(self.loss_org)
+        self.loss = tf.reduce_mean(self.loss_org)#+0.0001*self.regularizer
 #         print(self.loss)
         
     
@@ -178,13 +181,14 @@ class Text2VecMulti:
 #                 self.supp:y_sup #np.array([[1]*self.num_icons]*self.model_params.batch_size)
             })
             
-            if epoch <= 8000: 
+            if epoch <= 5000: 
                 spe = 1000
             else:
                 spe = 10
             
             if epoch % spe == 0:
                 print("Epoch=%d loss=%8.5f" %(epoch, current_loss))
+                print(max_res["minWordAll"]) 
 #                 print(y[0], logits[0], loss_org[0])
                 epoch += 1
                 trainres = self.cal_top_n(self.trainset, "train train", N=2, stop = 10000)
@@ -194,7 +198,7 @@ class Text2VecMulti:
                     continue
                 if devres[1] < max_res["min1000"][1]-0.01:
                     continue
-                if (devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00) or devres[1]> 0.245:
+                if (devres[1] > 0.2 and devres[1]>=max_res["min1000"][1] + 0.00) or devres[1]> 0.243:
                     if devres[1] > max_res["min1000"][1]:
                         max_res["min1000"] = devres
                     testres = self.cal_top_n(self.testset, "train devMinAll  ", N=2, stop = 116000)

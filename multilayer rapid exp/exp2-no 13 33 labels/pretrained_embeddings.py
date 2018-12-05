@@ -53,7 +53,7 @@ class FastText:
             self.load_and_store(model_path)
         else:
             self.model = gs.KeyedVectors.load_word2vec_format(model_path, binary = True)
-#             print(self.model.most_similar('car'))
+            print(self.model.most_similar('car'))
 #             print(self.model['hello'])
 
     def __getitem__(self, keywords):
