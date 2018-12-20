@@ -1,7 +1,7 @@
 """generate the corresponding set for Erik's benchmark"""
 import numpy as np
 import pickle as pk
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import re
 from pretrained_embeddings import Word2Vec
 from pretrained_embeddings import FastText
@@ -19,13 +19,16 @@ params = {
 #     "embedding_method": "word2vec",
 #     "embedding_method": "glove",
     "embedding_method": "fasttext",
+
+    'doc_count_threshold': 1 #'The minimum number of documents a word or bigram should occur in to keep it in the vocabulary.'
+
 }
 
 Document = namedtuple('Document', \
-    'icon    icon_idx    \
-     label   label_idx    collection    collection_idx \
+    'icon    icon_idx  label\
+     collection    collection_idx\
      phrase  phrase_vec   norm_phrase_vec\
-     is_validation is_test add_tokens\
+     is_validation is_test\
     ')
 #embedding_glove embedding_word2vec embedding_fasttext
 
@@ -34,17 +37,15 @@ setOnlyInTrain = {'toothpaste': 111, 'butterfly': 4, 'sled': 16, 'poles': 31, 's
 setOnlyInTest =  {'diskjockey': 1, 'plug': 23, 'baseballhat': 4, 'arrowcircle': 5, 'electrician': 2, 'chick': 1, 'childwithballoon': 1, 'panda': 1, 'foot': 1, 'drawingcompass': 1, 'lighthousescene': 1, 'brontosaurus': 2, 'turkeycooked': 1}
 
 
-
-
-
-
-
-
 class benchmarkPreprocessor:
     """class that generates phrase embedding and labels"""
     def __init__(self):    
         self.embedding_method = params["embedding_method"]
-        self.icon2idx = {}
+        
+        with open("data/icon idx maps.p", "rb") as f:
+            self.icon2idx = pk.load(f)
+            self.idx2icon = pk.load(f)
+
         if "word2vec" == self.embedding_method:
             self.model = Word2Vec()
         elif "fasttext" == self.embedding_method:
@@ -52,12 +53,53 @@ class benchmarkPreprocessor:
             self.model = FastText('C:/workshop/icon2vec/data/fasttext/wiki-news-300d-1M.vec.bin', loadbinary=True)
         elif "glove" == self.embedding_method:
             self.model = GloVe('data/glove.42B.300d.txt.bin', loadbinary=True)
-            
-        self.loadStopList()
-        self.loadCSV()
         
+        # processing
+        self.loadStopList()
+        vocab_freqs, doc_counts = self.gen_vocab()
+        self.E, self.Var, self.embedding = self.normlize(vocab_freqs, doc_counts)
+        self.loadCSV()
 
-    
+    def normlize(self, vocab_freqs, doc_counts):
+        embedding = {}
+        sum = 0
+        E = np.zeros(300, np.float32)
+        Var = 0.0
+
+        for term, freq in vocab_freqs.items():
+            embedding[term] = self.model[[term]]
+            E += embedding[term]*freq
+            sum += freq
+        E = np.true_divide(E, sum)
+
+        for term, freq in vocab_freqs.items():
+            tmp = embedding[term]-E
+            t = 0
+            for i in tmp:
+                t += i**2
+            Var += freq*t
+        Var = np.true_divide(Var, sum)
+        import math
+        Var = math.sqrt(Var)
+        for term, ee in embedding.items():
+            embedding[term] = np.true_divide(ee-E, Var)
+
+        # print(len(embedding))
+        # print(sum)
+        # print(E)
+        # print(Var)
+        return E, Var, embedding
+        
+    def normalized_embedding(self, phrase):
+        rtn = np.zeros(300, np.float32)
+        for token in phrase: 
+            if token in self.embedding:
+                rtn += self.embedding[token]
+            else:
+                t = self.model[[token]]-self.E
+                rtn += np.true_divide(t, self.Var)
+        return rtn
+
     def loadStopList(self):
         self.stoplist = set()
         with open("data/stoplist2") as f:
@@ -75,57 +117,94 @@ class benchmarkPreprocessor:
     
     def loadCSV(self):
         """main entry to load csv"""
-        self.train = self.__loadErikOveson_11_05_testset(params["trainsetName"])
-        self.test = self.__loadErikOveson_11_05_testset(params["testsetName"])
+        self.train = self.__loadErikOveson_11_05_testset(params["trainsetName"], False)
+        self.test = self.__loadErikOveson_11_05_testset(params["testsetName"], True)
         print("parsed train/test:", len(self.train), len(self.test))
         print("total icons:", len(self.icon2idx))
 #         print(self.icon2idx)
 #         self.__process_method_0()
-#         print(self.train[10])
+        print(self.train[9:10])
+        self.outPut()
 
-    def __loadErikOveson_11_05_testset(self, filepath):
+    def __loadErikOveson_11_05_testset(self, filepath, is_test):
         """load """
         # smaller. close to organic
         # larger. with designertopfeedback
         res = []
         with open(filepath, 'r', encoding="utf8") as f:
-            lineID = 0
             for line in f:
-                try:
-                    
-                except:
-                    print(line, items)
-                    raise
+                if line == "": continue
+                items = line.split()
+                icon = []
+                for i in range(len(items)):
+                    if items[i][:9] == "__label__":
+                        icon.append(items[i][9:])
+                    else:
+                        break
+                phrase = [it for it in items[i:] if not it in self.stoplist]
+                res.append(Document(
+                      icon = tuple(icon),
+                      icon_idx = tuple([self.icon2idx[eachicon] for eachicon in icon]),
+                      label = self.genLabel(icon),
+                      collection = None, collection_idx = None,
+                      phrase = ' '.join(phrase), phrase_vec = self.model[phrase],
+                      norm_phrase_vec = self.normalized_embedding(phrase), 
+                      is_validation = False, is_test = is_test))
         return res
     
+    def gen_vocab(self, trainfilePath = params["trainsetName"]):
+        # vocab_freqs: dict<token, frequency count>
+        # doc_counts: dict<token, document count>
+        vocab_freqs = defaultdict(int)
+        doc_counts = defaultdict(int)
+        def fill_vocab_from_doc(phrase, vocab_freqs, doc_counts):
+              doc_seen = set()
+              for token in phrase:
+                vocab_freqs[token] += 1
+                if token not in doc_seen:
+                  doc_counts[token] += 1
+                  doc_seen.add(token)
+
+        with open(trainfilePath, 'r', encoding="utf8") as f:
+            for line in f:
+                if line == "": continue
+                items = line.split()
+                for i in range(len(items)):
+                    if items[i][:9] == "__label__":
+                        continue
+                    else:
+                        break
+                phrase = items[i:]
                 
+                fill_vocab_from_doc(phrase, vocab_freqs, doc_counts)
+                
+        # Filter out low-occurring terms and stopwords
+        vocab_freqs = dict((term, freq) for term, freq in vocab_freqs.items() \
+            if doc_counts[term] > params["doc_count_threshold"] and term not in self.stoplist)
+
+        # Sort by frequency
+        ordered_vocab_freqs = sorted(vocab_freqs.items(), key=lambda x: x[1], reverse=True)
+
+        # filter doc counts from vocab_freqs
+        filtered_doc_counts = dict((term, freq) for term, freq in doc_counts.items()\
+            if term in vocab_freqs)
+
+        # Write
+        with open("tmp/vocab/vocab.txt", 'w', encoding="utf-8") as vocab_f:
+            with open("tmp/vocab/vocab_freq.txt", 'w', encoding="utf-8") as freq_f:
+              for word, freq in ordered_vocab_freqs:
+                vocab_f.write('{}\n'.format(word))
+                freq_f.write('{}\n'.format(freq))
+        return vocab_freqs, filtered_doc_counts
+    
     def outPut(self):
-        fileObject = open("data/train."+self.embedding_method+".multiclass.remove33_13.p", "wb")
-        pk.dump(self.traind, fileObject)
-        fileObject = open("data/test."+self.embedding_method+".multiclass.remove33_13.p", "wb")
-        pk.dump(self.testd, fileObject)
+        fileObject = open("tmp/train."+self.embedding_method+".multiclass.p", "wb")
+        pk.dump(self.train, fileObject)
+        fileObject = open("tmp/test."+self.embedding_method+".multiclass.p", "wb")
+        pk.dump(self.test, fileObject)
         fileObject.close()
 
-    def proprocess(self):
-        self.traind = self._proprocess(self.train)
-        self.testd = self._proprocess(self.test)
-        self.outPut()
-        
-    
-    def _proprocess(self, rawdataset):
-        """ generate icon and phrase embedding: embedding, iconidx, iconName, Phrase """
-        d = []
-        for idx, item in enumerate(rawdataset):
-            phrase, labels = item[0], item[1]
-#             print(idx, phrase, labels)
-            phrase_embedding = self.model[phrase]
-            d.append([np.array(phrase_embedding),np.array(self.genLabel(labels)), ' '.join(phrase), labels])
-#             if idx == 1:
-#                 break
-#         print(d[0])
-        print("processed ",self.embedding_method, "with", len(d), "entries;")
-        return d
+
 
 
 M = benchmarkPreprocessor()
-M.proprocess()
