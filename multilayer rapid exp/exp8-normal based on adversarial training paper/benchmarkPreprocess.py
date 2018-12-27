@@ -1,6 +1,7 @@
 """generate the corresponding set for Erik's benchmark"""
 import numpy as np
 import pickle as pk
+# import json
 from collections import namedtuple, defaultdict
 import re
 from pretrained_embeddings import Word2Vec
@@ -14,6 +15,7 @@ __email__ = "jili5@microsoft.com"
 # top level params to control the script
 params = {
     "trainsetName": "data/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.txt",
+    "newTrainDataName": "data/newicondata_v0.txt",
     "testsetName": "data/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.txt", 
 
 #     "embedding_method": "word2vec",
@@ -118,6 +120,8 @@ class benchmarkPreprocessor:
     def loadCSV(self):
         """main entry to load csv"""
         self.train = self.__loadErikOveson_11_05_testset(params["trainsetName"], False)
+        self.train += self.__loadErikOveson_11_05_testset(params["newTrainDataName"], False)
+        
         self.test = self.__loadErikOveson_11_05_testset(params["testsetName"], True)
         print("parsed train/test:", len(self.train), len(self.test))
         print("total icons:", len(self.icon2idx))
@@ -125,6 +129,7 @@ class benchmarkPreprocessor:
 #         self.__process_method_0()
         print(self.train[9:10])
         self.outPut()
+        # self.outPutSelected()
 
     def __loadErikOveson_11_05_testset(self, filepath, is_test):
         """load """
@@ -203,6 +208,10 @@ class benchmarkPreprocessor:
         fileObject = open("tmp/test."+self.embedding_method+".multiclass.p", "wb")
         pk.dump(self.test, fileObject)
         fileObject.close()
+        # with open("tmp/train."+self.embedding_method+".multiclass.json", "w") as f:
+            # json.dump(self.train, f)
+        # with open("tmp/test."+self.embedding_method+".multiclass.json", "w") as f:
+            # json.dump(self.test, f)
 
 
 
