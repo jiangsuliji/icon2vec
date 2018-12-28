@@ -44,7 +44,7 @@ class Text2VecMulti:
     def __init__(self):
         self.num_icons = 844
         self.batch_size = 650
-        self.dropout = 0.1
+        self.dropout = 0.5
         self.max_epochs = 30000000
         self.learning_rate = 0.0003
         self.nn_params = [300, 1000]
@@ -58,12 +58,6 @@ class Text2VecMulti:
         self.s = time.time()
         
     def initializeDataset(self):
-        # fileObject = open("tmp/testset.p", 'rb')
-        # self.testset = pk.load(fileObject)
-        # fileObject = open("tmp/trainset.p", 'rb')
-        # self.trainset = pk.load(fileObject)
-        # fileObject.close()
-        
         fileObject = open("tmp/test.fasttext.multiclass.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         icon_idx, phrase_embedding, labels, phrase = [], [], [], []
@@ -89,13 +83,27 @@ class Text2VecMulti:
         fileObject = open("tmp/train.fasttext.multiclass.p", 'rb')
         benchmarktrainraw = pk.load(fileObject)
         icon_idx, phrase_embedding, labels, phrase = [], [], [], []
+        icon_idx1, phrase_embedding1, labels1, phrase1 = [], [], [], []
         oldicon, newicon = 0, 0
         for doc in benchmarktrainraw:
             oldicon += 1
+            phrase_embedding.append(doc.norm_phrase_vec)
+            labels.append(np.array(doc.label))
+            phrase.append(doc.phrase)
+            icon_idx.append(doc.icon)
             for ii in doc.icon_idx:
               if ii > 490:
                 newicon += 1
                 oldicon -= 1
+                phrase_embedding1.append(doc.norm_phrase_vec)
+                labels1.append(np.array(doc.label))
+                phrase1.append(doc.phrase)
+                icon_idx1.append(doc.icon)
+                
+                icon_idx.pop()
+                phrase_embedding.pop()
+                labels.pop()
+                phrase.pop()
                 break
                 
             # usethisentry = 0
@@ -109,15 +117,16 @@ class Text2VecMulti:
                 # for t in doc.icon_idx:
                     # doc.label[t] = 0.4
             
-            phrase_embedding.append(doc.norm_phrase_vec)
-            labels.append(np.array(doc.label))
-            phrase.append(doc.phrase)
-            icon_idx.append(doc.icon)
         icon_idx, phrase_embedding, labels, phrase = np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(phrase)
+        icon_idx1, phrase_embedding1, labels1, phrase1 = np.array(icon_idx1), np.array(phrase_embedding1), np.array(labels1), np.array(phrase1)
+
         self.trainset = [phrase_embedding, labels, phrase, icon_idx]
+        self.trainset1 = [phrase_embedding1, labels1, phrase1, icon_idx1]
+
         fileObject.close()
         print("parsed train/test:", len(self.trainset[0]), len(self.testset[0]))
         print("Trainset-old,new,percentage of new:", oldicon, newicon, newicon/(newicon+oldicon))
+        print("Trainset-old,new:", len(self.trainset[0]), len(self.trainset1[0]))
         self.print_time("initializeDataset load")
 
 
@@ -200,13 +209,15 @@ class Text2VecMulti:
         epoch = 0
 
         max_res = {"min1000":[0,0], "min5000":[0,0], "minWordAll":[0,0], "train1000": [0,0], "train5000": [0,0]} 
-        while epoch < self.max_epochs:   
-            training_idx = np.random.randint(len(self.trainset[1]), size=self.batch_size)
+        while epoch < self.max_epochs:
+            training_idx = np.random.randint(len(self.trainset[1]), size=self.batch_size*2//3)
+            training_idx1 = np.random.randint(len(self.trainset1[1]), size=self.batch_size//3)
+
             # print(self.trainset[0][training_idx][0])
             # print(len(self.trainset[1][training_idx][0]))
             _, current_loss, y, logits = self.session.run([minimization_op, self.loss, self.y,self.logits], feed_dict={
-                self.phrase_vec:self.trainset[0][training_idx],
-                self.y:self.trainset[1][training_idx],
+                self.phrase_vec:np.concatenate((self.trainset[0][training_idx],self.trainset1[0][training_idx1]), axis=0),
+                self.y:np.concatenate((self.trainset[1][training_idx], self.trainset1[1][training_idx1]), axis=0),
                 self.trainFlag: True
             })
             
