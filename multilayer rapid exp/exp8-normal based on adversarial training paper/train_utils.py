@@ -44,14 +44,14 @@ def cal_metrics(results, icons, str, N=2):
     print_top_accuracy_TP(P, T, F, str)
     return P
 
-def cal_NewIconFireRate(results):
+def cal_NewIconFireRate(results, st):
     totalSentence = len(results)
     newIconSentence = 0
     for i in range(len(results)):
         if results[i][0] > 490 or results[i][1] > 490:
             newIconSentence += 1
 
-    s = "\t\tNewIconFireRate="
+    s = "\t\t"+st+"\t"+"NewIconFireRate="
     s += "%3.3f," %(newIconSentence/totalSentence)
     s += "newIconSentence=" + str(newIconSentence)
     print(s)

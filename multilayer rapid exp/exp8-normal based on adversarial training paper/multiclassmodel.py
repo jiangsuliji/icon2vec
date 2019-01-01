@@ -34,8 +34,6 @@ Document = namedtuple('Document', \
      is_validation is_test\
     ')
 
-
-
 #-----------------------------------------------------------------------
 #                  multi class classifier
 #-----------------------------------------------------------------------
@@ -44,7 +42,7 @@ class Text2VecMulti:
     def __init__(self):
         self.num_icons = 844
         self.batch_size = 650
-        self.dropout = 0.5
+        self.dropout = 0.2
         self.max_epochs = 30000000
         self.learning_rate = 0.0003
         self.nn_params = [300, 1000]
@@ -78,6 +76,26 @@ class Text2VecMulti:
         self.testset = [phrase_embedding, labels, phrase, icon_idx]
         print("Testset-old,new,percentage of new:", oldicon, newicon, newicon/(newicon+oldicon))
 
+        fileObject = open("tmp/description_test.fasttext.multiclass.p", 'rb')
+        benchmarktrainraw = pk.load(fileObject)
+        icon_idx, phrase_embedding, labels, phrase = [], [], [], []
+        oldicon, newicon = 0, 0
+        for doc in benchmarktrainraw:
+            oldicon += 1
+            for ii in doc.icon_idx:
+              if ii > 490:
+                newicon += 1
+                oldicon -= 1
+                break
+            phrase_embedding.append(doc.norm_phrase_vec)
+            labels.append(np.array(doc.label))
+            phrase.append(doc.phrase)
+            icon_idx.append(doc.icon)
+
+        icon_idx, phrase_embedding, labels, phrase = np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(phrase)
+        self.description_test = [phrase_embedding, labels, phrase, icon_idx]
+        print("description_test-old,new,percentage of new:", oldicon, newicon, newicon/(newicon+oldicon))
+        
         tt = defaultdict(int)
 
         fileObject = open("tmp/train.fasttext.multiclass.p", 'rb')
@@ -105,17 +123,7 @@ class Text2VecMulti:
                 labels.pop()
                 phrase.pop()
                 break
-                
-            # usethisentry = 0
-            # for t in doc.icon_idx:
-                # if tt[t] > 5000:
-                    # usethisentry += 1
-                    # doc.label[t] = 0.8
-                # else:
-                    # tt[t] += 1
-            # if usethisentry == len(doc.icon_idx): 
-                # for t in doc.icon_idx:
-                    # doc.label[t] = 0.4
+               
             
         icon_idx, phrase_embedding, labels, phrase = np.array(icon_idx), np.array(phrase_embedding), np.array(labels), np.array(phrase)
         icon_idx1, phrase_embedding1, labels1, phrase1 = np.array(icon_idx1), np.array(phrase_embedding1), np.array(labels1), np.array(phrase1)
@@ -195,7 +203,9 @@ class Text2VecMulti:
 #         self.loss = tf.multiply(self.loss_org, self.supp)
         self.loss = tf.reduce_mean(self.loss_org)#+0.0001*self.regularizer
 #         print(self.loss)
-        
+
+        # 'Saver' op to save and restore all the variables
+        self.saver = tf.train.Saver(max_to_keep=100)
     
     
     # train the model using the appropriate parameters
@@ -210,8 +220,8 @@ class Text2VecMulti:
 
         max_res = {"min1000":[0,0], "min5000":[0,0], "minWordAll":[0,0], "train1000": [0,0], "train5000": [0,0]} 
         while epoch < self.max_epochs:
-            training_idx = np.random.randint(len(self.trainset[1]), size=self.batch_size*2//3)
-            training_idx1 = np.random.randint(len(self.trainset1[1]), size=self.batch_size//3)
+            training_idx = np.random.randint(len(self.trainset[1]), size=self.batch_size//5*3)
+            training_idx1 = np.random.randint(len(self.trainset1[1]), size=self.batch_size//5*2)
 
             # print(self.trainset[0][training_idx][0])
             # print(len(self.trainset[1][training_idx][0]))
@@ -233,7 +243,7 @@ class Text2VecMulti:
                 epoch += 1
                 trainres = self.cal_top_n(self.trainset, "train train", fNewIconFireRate=False, N=2, stop = 10000)
                 devres = self.cal_top_n(self.testset, "train dev1000", fNewIconFireRate=False, N=2,stop=1000)
-#                 testres = self.cal_top_n(self.test, "train test", N=2,stop=2000)
+                tt = self.cal_top_n(self.description_test, "train description", fNewIconFireRate=True, N=2)
                 if not devres:
                     continue
                 if devres[1] < max_res["min1000"][1]-0.01:
@@ -243,12 +253,11 @@ class Text2VecMulti:
                         max_res["min1000"] = devres
                     testres = self.cal_top_n(self.testset, "train devMinAll  ", fNewIconFireRate=True, N=2, stop = 116052)
                     
-#                     V = self.session.run(self.V[0])
-                    
-# #                     self.saveModel(self.model_params.model_folder("minworddev", devres[0], devres[1]),V)
                     
                     if testres[1] > max_res["minWordAll"][1]:
                         max_res["minWordAll"] = testres
+                        # save_path = self.saver.save(self.session, "model/"+str(testres[1]))
+                        
 #                         max_res["min5000"] = testres
 #                         testminallres = self.cal_top_n(self.benchmarkDatasetMin, "testMinALL  ", N=2)
 #                         if testminallres[1] > max_res["minWordAll"][1]:
@@ -256,7 +265,6 @@ class Text2VecMulti:
 # #                             if testminallres[1] > max_res["minWordAll"][1]:
 #                             max_res["minWordAll"] = testminallres
 # #                                 max_res["notMinAll"] = testallres
-# #                             self.saveModel(self.model_params.model_folder("minword", testminallres[0], testminallres[1]), V)
                 
             epoch += 1
 
@@ -274,16 +282,10 @@ class Text2VecMulti:
         results = [sorted(range(0, self.num_icons), key=lambda j:res[i][j], reverse=True)[:N] for i in range(min(stop, len(dataset[0])))]
 #         print(res[0][results[0]], results[0])
         if fNewIconFireRate:
-            train_utils.cal_NewIconFireRate(results)
+            train_utils.cal_NewIconFireRate(results, str)
         return train_utils.cal_metrics(results, dataset[1][:min(stop, sys.maxsize)], str, N=N)
         
 
-    
-    
-
-
-        
-        
         
 M = Text2VecMulti()
 M.train()

@@ -17,7 +17,8 @@ params = {
     "trainsetName": "data/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.txt",
     "newTrainDataName": "data/newicondata_v0.txt",
     "testsetName": "data/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.txt", 
-
+    "description_test": "data/icon_description.csv.txt",
+    "unlabeledDataName": "data/unlabel_data_all_lang.txt",
 #     "embedding_method": "word2vec",
 #     "embedding_method": "glove",
     "embedding_method": "fasttext",
@@ -121,8 +122,10 @@ class benchmarkPreprocessor:
         """main entry to load csv"""
         self.train = self.__loadErikOveson_11_05_testset(params["trainsetName"], False)
         self.train += self.__loadErikOveson_11_05_testset(params["newTrainDataName"], False)
+        self.train_unlabel = self.__loadUnlabeledData(params["unlabeledDataName"], False)
         
         self.test = self.__loadErikOveson_11_05_testset(params["testsetName"], True)
+        self.description_test =  self.__loadErikOveson_11_05_testset(params["description_test"], True)
         print("parsed train/test:", len(self.train), len(self.test))
         print("total icons:", len(self.icon2idx))
 #         print(self.icon2idx)
@@ -156,6 +159,24 @@ class benchmarkPreprocessor:
                       norm_phrase_vec = self.normalized_embedding(phrase), 
                       is_validation = False, is_test = is_test))
         return res
+        
+    def __loadUnlabeledData(self, filepath, is_test=False):
+        res = []
+        with open(filepath, 'r', encoding="utf8") as f:
+            for line in f:
+                if line == "": continue
+                items = line.split()
+                phrase = [it for it in items if not it in self.stoplist]
+                res.append(Document(
+                      icon = None,
+                      icon_idx = None,
+                      label = None,
+                      collection = None, collection_idx = None,
+                      phrase = ' '.join(phrase), phrase_vec = self.model[phrase],
+                      norm_phrase_vec = self.normalized_embedding(phrase), 
+                      is_validation = False, is_test = is_test))
+        return res
+    
     
     def gen_vocab(self, trainfilePath = params["trainsetName"]):
         # vocab_freqs: dict<token, frequency count>
@@ -207,7 +228,13 @@ class benchmarkPreprocessor:
         pk.dump(self.train, fileObject)
         fileObject = open("tmp/test."+self.embedding_method+".multiclass.p", "wb")
         pk.dump(self.test, fileObject)
+        fileObject = open("tmp/description_test."+self.embedding_method+".multiclass.p", "wb")
+        pk.dump(self.description_test, fileObject)
         fileObject.close()
+        fileObject = open("tmp/train_unlabel."+self.embedding_method+".multiclass.p", "wb")
+        pk.dump(self.train_unlabel, fileObject)
+        
+        
         # with open("tmp/train."+self.embedding_method+".multiclass.json", "w") as f:
             # json.dump(self.train, f)
         # with open("tmp/test."+self.embedding_method+".multiclass.json", "w") as f:
