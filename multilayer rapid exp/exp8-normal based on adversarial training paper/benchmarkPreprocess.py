@@ -17,7 +17,8 @@ params = {
     "trainsetName": "data/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.txt",
     "newTrainDataName": "data/newicondata_v0.txt",
     "testsetName": "data/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.txt", 
-    "description_test": "data/icon_description.csv.txt",
+    # "description_test": "data/icon_description.csv.txt",
+    "description_test": "data/John test set.txt",
     "unlabeledDataName": "data/unlabel_data_all_lang.txt",
 #     "embedding_method": "word2vec",
 #     "embedding_method": "glove",
@@ -61,7 +62,8 @@ class benchmarkPreprocessor:
         self.loadStopList()
         vocab_freqs, doc_counts = self.gen_vocab()
         self.E, self.Var, self.embedding = self.normlize(vocab_freqs, doc_counts)
-        self.loadCSV()
+        # self.loadCSV()
+        self.loadUnlabeled()
 
     def normlize(self, vocab_freqs, doc_counts):
         embedding = {}
@@ -122,17 +124,18 @@ class benchmarkPreprocessor:
         """main entry to load csv"""
         self.train = self.__loadErikOveson_11_05_testset(params["trainsetName"], False)
         self.train += self.__loadErikOveson_11_05_testset(params["newTrainDataName"], False)
-        self.train_unlabel = self.__loadUnlabeledData(params["unlabeledDataName"], False)
         
         self.test = self.__loadErikOveson_11_05_testset(params["testsetName"], True)
         self.description_test =  self.__loadErikOveson_11_05_testset(params["description_test"], True)
         print("parsed train/test:", len(self.train), len(self.test))
         print("total icons:", len(self.icon2idx))
 #         print(self.icon2idx)
-#         self.__process_method_0()
-        print(self.train[9:10])
+        # print(self.train[9:10])
         self.outPut()
-        # self.outPutSelected()
+        
+    def loadUnlabeled(self):
+        self.__loadUnlabeledData(params["unlabeledDataName"], False)
+
 
     def __loadErikOveson_11_05_testset(self, filepath, is_test):
         """load """
@@ -162,6 +165,8 @@ class benchmarkPreprocessor:
         
     def __loadUnlabeledData(self, filepath, is_test=False):
         res = []
+        len_th = 400000
+        cnt = 0
         with open(filepath, 'r', encoding="utf8") as f:
             for line in f:
                 if line == "": continue
@@ -175,7 +180,13 @@ class benchmarkPreprocessor:
                       phrase = ' '.join(phrase), phrase_vec = self.model[phrase],
                       norm_phrase_vec = self.normalized_embedding(phrase), 
                       is_validation = False, is_test = is_test))
-        return res
+                if len(res) == len_th:
+                  fileObject = open("tmp/train_unlabel."+self.embedding_method+".multiclass.p."+str(cnt), "wb")
+                  cnt += 1
+                  pk.dump(res, fileObject)
+                  fileObject.close()
+                  res = []
+
     
     
     def gen_vocab(self, trainfilePath = params["trainsetName"]):
@@ -231,9 +242,7 @@ class benchmarkPreprocessor:
         fileObject = open("tmp/description_test."+self.embedding_method+".multiclass.p", "wb")
         pk.dump(self.description_test, fileObject)
         fileObject.close()
-        fileObject = open("tmp/train_unlabel."+self.embedding_method+".multiclass.p", "wb")
-        pk.dump(self.train_unlabel, fileObject)
-        
+
         
         # with open("tmp/train."+self.embedding_method+".multiclass.json", "w") as f:
             # json.dump(self.train, f)
