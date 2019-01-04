@@ -17,13 +17,13 @@ params = {
     "trainsetName": "data/trainset_12-2017_9-1-2018_025Unk.ss.csv.fasttext.txt",
     "newTrainDataName": "data/newicondata_v0.txt",
     "testsetName": "data/testset_SingleIcon_9-18_10-18-2018_025Unk_MinWord3_Kept24Hrs.ss.csv.fasttext.txt", 
-    # "description_test": "data/icon_description.csv.txt",
-    "description_test": "data/John test set.txt",
+    "description_test": "data/icon_description.csv.txt",
+    # "description_test": "data/John test set.txt",
     "unlabeledDataName": "data/unlabel_data_all_lang.txt",
 #     "embedding_method": "word2vec",
 #     "embedding_method": "glove",
     "embedding_method": "fasttext",
-
+    "fNormalize": False, 
     'doc_count_threshold': 1 #'The minimum number of documents a word or bigram should occur in to keep it in the vocabulary.'
 
 }
@@ -62,8 +62,8 @@ class benchmarkPreprocessor:
         self.loadStopList()
         vocab_freqs, doc_counts = self.gen_vocab()
         self.E, self.Var, self.embedding = self.normlize(vocab_freqs, doc_counts)
-        # self.loadCSV()
-        self.loadUnlabeled()
+        self.loadCSV()
+        # self.loadUnlabeled()
 
     def normlize(self, vocab_freqs, doc_counts):
         embedding = {}
@@ -95,15 +95,19 @@ class benchmarkPreprocessor:
         # print(Var)
         return E, Var, embedding
         
-    def normalized_embedding(self, phrase):
+    def normalized_embedding(self, phrase, fNormalize=params["fNormalize"]):
         rtn = np.zeros(300, np.float32)
-        for token in phrase: 
-            if token in self.embedding:
-                rtn += self.embedding[token]
-            else:
-                t = self.model[[token]]-self.E
-                rtn += np.true_divide(t, self.Var)
+        if fNormalize:
+          for token in phrase: 
+              if token in self.embedding:
+                  rtn += self.embedding[token]
+              else:
+                  t = self.model[[token]]-self.E
+                  rtn += np.true_divide(t, self.Var)
+        else:
+            rtn = self.model[phrase]
         return rtn
+        
 
     def loadStopList(self):
         self.stoplist = set()
@@ -187,7 +191,6 @@ class benchmarkPreprocessor:
                   fileObject.close()
                   res = []
 
-    
     
     def gen_vocab(self, trainfilePath = params["trainsetName"]):
         # vocab_freqs: dict<token, frequency count>

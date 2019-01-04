@@ -131,7 +131,7 @@ class Text2VecMulti:
         # parse train_unlabel dataset
         self.unlabel_batch_num = 0
         self.train_unlabel = []
-        self.fetchNextBatchUnlabeledData()
+        # self.fetchNextBatchUnlabeledData()
         fileObject.close()
         print("parsed train/test/train_unlabel:", len(self.trainset[0]), len(self.testset[0]), len(self.train_unlabel))
         print("Trainset-old,new,percentage of new:", oldicon, newicon, newicon/(newicon+oldicon))
@@ -233,10 +233,10 @@ class Text2VecMulti:
                 self.trainFlag: True
             })
             
-            if epoch <= 13000:
-                spe = 1000
+            if epoch <= 26000:
+                spe = 2000
             else:
-                spe = 200*(1+self.unlabeled_passes//10)**2
+                spe = 500*(1+self.unlabeled_passes//10)**2
             
             if epoch % spe == 0:
                 print("Epoch=%d loss=%8.5f" %(epoch, current_loss))
@@ -269,9 +269,8 @@ class Text2VecMulti:
 #                             max_res["minWordAll"] = testminallres
 # #                                 max_res["notMinAll"] = testallres
                 
-                # TODO: add unlabel data filtering here
-                if max_res["minWordAll"][1] > 0.17:
-                  self.runUnlabeledData()
+                # if max_res["minWordAll"][1] > 0.17:
+                  # self.runUnlabeledData()
 
             epoch += 1
 
